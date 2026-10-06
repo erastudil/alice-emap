@@ -1,0 +1,12 @@
+[
+  {"lemma":"islands","verdict":"accept","reasons":["ok"]},
+  {"lemma":"davis","verdict":"accept","reasons":["ok"]},
+  {"lemma":"eric","verdict":"accept","reasons":["ok"]},
+  {"lemma":"audio","verdict":"accept","reasons":["ok"]},
+  {"lemma":"railway","verdict":"accept","reasons":["ok"]},
+  {"lemma":"shock","verdict":"accept","reasons":["ok"]},
+  {"lemma":"silence","verdict":"accept","reasons":["ok"]},
+  {"lemma":"soldier","verdict":"accept","reasons":["ok"]},
+  {"lemma":"supporters","verdict":"accept","reasons":["ok"]},
+  {"lemma":"tons","verdict":"accept","reasons":["ok"]}
+]

@@ -1,0 +1,152 @@
+[
+  {
+    "lemma": "assembly",
+    "pos": "N",
+    "gloss": "a group of people who come together for a common purpose or meeting",
+    "dewey": "320",
+    "t1_decomposition": "something and people and gather",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "gathering",
+        "weight": 0.95
+      }
+    ]
+  },
+  {
+    "lemma": "breakfast",
+    "pos": "N",
+    "gloss": "the first meal of the day that people eat in the morning",
+    "dewey": "641",
+    "t1_decomposition": "meal and morning",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "meal",
+        "weight": 0.95
+      }
+    ]
+  },
+  {
+    "lemma": "combination",
+    "pos": "N",
+    "gloss": "a mixture of different things that are put together to create something new",
+    "dewey": "001",
+    "t1_decomposition": "something and mix",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "mixture",
+        "weight": 0.95
+      }
+    ]
+  },
+  {
+    "lemma": "customer",
+    "pos": "N",
+    "gloss": "a person who buys goods or services from a business or store",
+    "dewey": "658",
+    "t1_decomposition": "someone and buy",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "synonym",
+        "target": "buyer",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "desire",
+    "pos": "N",
+    "gloss": "a strong feeling of wanting something or someone",
+    "dewey": "152",
+    "t1_decomposition": "want and something",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "synonym",
+        "target": "wish",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "draft",
+    "pos": "N",
+    "gloss": "a preliminary version of a document or plan that is not yet final",
+    "dewey": "808",
+    "t1_decomposition": "version and not final",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "version",
+        "weight": 0.95
+      }
+    ]
+  },
+  {
+    "lemma": "humans",
+    "pos": "N",
+    "gloss": "people who are alive and part of the human species",
+    "dewey": "599",
+    "t1_decomposition": "people",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "synonym",
+        "target": "people",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "hundreds",
+    "pos": "N",
+    "gloss": "a large number of things or people that can be counted",
+    "dewey": "513",
+    "t1_decomposition": "many and something",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "number",
+        "weight": 0.95
+      }
+    ]
+  },
+  {
+    "lemma": "markets",
+    "pos": "N",
+    "gloss": "places where people buy and sell goods or services",
+    "dewey": "381",
+    "t1_decomposition": "place and buy and sell",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "place",
+        "weight": 0.95
+      }
+    ]
+  },
+  {
+    "lemma": "medium",
+    "pos": "N",
+    "gloss": "something that is in the middle or average in size, amount, or degree",
+    "dewey": "001",
+    "t1_decomposition": "something and middle",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "intermediate",
+        "weight": 0.95
+      }
+    ]
+  }
+]

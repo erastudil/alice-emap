@@ -1,0 +1,12 @@
+[
+  {"lemma":"assembly","verdict":"accept","reasons":["ok"]},
+  {"lemma":"breakfast","verdict":"accept","reasons":["ok"]},
+  {"lemma":"combination","verdict":"accept","reasons":["ok"]},
+  {"lemma":"customer","verdict":"accept","reasons":["ok"]},
+  {"lemma":"desire","verdict":"accept","reasons":["ok"]},
+  {"lemma":"draft","verdict":"accept","reasons":["ok"]},
+  {"lemma":"humans","verdict":"accept","reasons":["ok"]},
+  {"lemma":"hundreds","verdict":"accept","reasons":["ok"]},
+  {"lemma":"markets","verdict":"accept","reasons":["ok"]},
+  {"lemma":"medium","verdict":"accept","reasons":["ok"]}
+]
