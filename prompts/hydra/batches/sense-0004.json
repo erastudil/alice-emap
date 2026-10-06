@@ -1,0 +1,247 @@
+[
+  {
+    "id": 1754,
+    "lemma": "teachers",
+    "pos": "N",
+    "gloss": "persons who deliver instruction or educate students",
+    "dewey": "371.1",
+    "t1_decomposition": "AGENTS(x) & CAUSE(x, LEARN(y))",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "form_of",
+        "target": "teacher",
+        "weight": 1.0
+      },
+      {
+        "rel": "hypernym",
+        "target": "educator",
+        "weight": 0.9
+      },
+      {
+        "rel": "domain_topic",
+        "target": "education",
+        "weight": 0.85
+      }
+    ]
+  },
+  {
+    "id": 1760,
+    "lemma": "audience",
+    "pos": "N",
+    "gloss": "an assembled group of listeners or spectators",
+    "dewey": "302.3",
+    "t1_decomposition": "GROUP(HUMANS(x)) & PERCEIVE(x, PERFORMANCE(y))",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "group",
+        "weight": 0.9
+      },
+      {
+        "rel": "has_member",
+        "target": "spectator",
+        "weight": 0.85
+      },
+      {
+        "rel": "domain_topic",
+        "target": "entertainment",
+        "weight": 0.75
+      }
+    ]
+  },
+  {
+    "id": 1803,
+    "lemma": "clothes",
+    "pos": "N",
+    "gloss": "items worn to cover the body",
+    "dewey": "687",
+    "t1_decomposition": "ARTIFACT(x) \u2227 COVER(x, BODY(y))",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "covering",
+        "weight": 0.85
+      },
+      {
+        "rel": "has_member",
+        "target": "shirt",
+        "weight": 0.8
+      },
+      {
+        "rel": "has_member",
+        "target": "trousers",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "id": 1851,
+    "lemma": "alternative",
+    "pos": "N",
+    "gloss": "one of two or more available possibilities",
+    "dewey": "160",
+    "t1_decomposition": "POSSIBILITY(x) & EXCLUSIVE_OR(x, y)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "option",
+        "weight": 0.9
+      },
+      {
+        "rel": "synonym",
+        "target": "choice",
+        "weight": 0.85
+      },
+      {
+        "rel": "derivation",
+        "target": "alternate",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "id": 1854,
+    "lemma": "awards",
+    "pos": "N",
+    "gloss": "marks of recognition given for achievement",
+    "dewey": "001.44",
+    "t1_decomposition": "PLUR(x) & RECOGNITION(x) & MERIT(y)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "form_of",
+        "target": "award",
+        "weight": 1.0
+      },
+      {
+        "rel": "hypernym",
+        "target": "honor",
+        "weight": 0.85
+      }
+    ]
+  },
+  {
+    "id": 1855,
+    "lemma": "bear",
+    "pos": "N",
+    "gloss": "large heavy mammal of the family Ursidae",
+    "dewey": "599.78",
+    "t1_decomposition": "MAMMAL(x) & URSID(x) & CLAWED(x)",
+    "depth": 4,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "carnivore",
+        "weight": 0.95
+      },
+      {
+        "rel": "member_of",
+        "target": "ursidae",
+        "weight": 0.95
+      },
+      {
+        "rel": "domain_topic",
+        "target": "zoology",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "id": 1902,
+    "lemma": "dick",
+    "pos": "N",
+    "gloss": "vulgar slang for a penis",
+    "dewey": "611.65",
+    "t1_decomposition": "ORGAN(x) \u2227 MALE_GENITALIA(x)",
+    "depth": 4,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "penis",
+        "weight": 0.95
+      },
+      {
+        "rel": "synonym",
+        "target": "cock",
+        "weight": 0.85
+      },
+      {
+        "rel": "part_of",
+        "target": "body",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "id": 1912,
+    "lemma": "labour",
+    "pos": "N",
+    "gloss": "productive work, especially hard physical effort",
+    "dewey": "331",
+    "t1_decomposition": "EFFORT(x) \u2227 PRODUCE(x, VALUE)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "work",
+        "weight": 0.95
+      },
+      {
+        "rel": "synonym",
+        "target": "labor",
+        "weight": 0.95
+      },
+      {
+        "rel": "derivation",
+        "target": "laborer",
+        "weight": 0.85
+      }
+    ]
+  },
+  {
+    "id": 1953,
+    "lemma": "tech",
+    "pos": "N",
+    "gloss": "technology or technological equipment collectively",
+    "dewey": "600",
+    "t1_decomposition": "ARTIFACT(x) \u2227 APPLIED_SCIENCE(x)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "technology",
+        "weight": 0.95
+      },
+      {
+        "rel": "domain_topic",
+        "target": "engineering",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "id": 1954,
+    "lemma": "trees",
+    "pos": "N",
+    "gloss": "plural of tree; woody perennial plants",
+    "dewey": "582.16",
+    "t1_decomposition": "PLURAL(x) \u2227 TREE(x)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "form_of",
+        "target": "tree",
+        "weight": 1.0
+      },
+      {
+        "rel": "hypernym",
+        "target": "plant",
+        "weight": 0.9
+      }
+    ]
+  }
+]

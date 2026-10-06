@@ -1,0 +1,202 @@
+[
+  {
+    "lemma": "teachers",
+    "pos": "N",
+    "gloss": "people who teach or educate students in a school or other setting",
+    "dewey": "371",
+    "t1_decomposition": "someone(x) & teach(x, people(y))",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "educator",
+        "weight": 0.9
+      },
+      {
+        "rel": "domain_topic",
+        "target": "education",
+        "weight": 0.85
+      }
+    ]
+  },
+  {
+    "lemma": "audience",
+    "pos": "N",
+    "gloss": "a group of people who gather to listen or watch a performance or presentation",
+    "dewey": "700",
+    "t1_decomposition": "people(x) & listen(x, performance(y))",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "group",
+        "weight": 0.9
+      },
+      {
+        "rel": "has_member",
+        "target": "spectator",
+        "weight": 0.85
+      }
+    ]
+  },
+  {
+    "lemma": "clothes",
+    "pos": "N",
+    "gloss": "items that people wear to cover their bodies",
+    "dewey": "391",
+    "t1_decomposition": "something(x) & wear(x, body(y))",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "covering",
+        "weight": 0.85
+      },
+      {
+        "rel": "has_part",
+        "target": "shirt",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "lemma": "alternative",
+    "pos": "N",
+    "gloss": "one of several options or choices that are available",
+    "dewey": "153",
+    "t1_decomposition": "something(x) & choose(x, option(y))",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "option",
+        "weight": 0.9
+      },
+      {
+        "rel": "synonym",
+        "target": "choice",
+        "weight": 0.85
+      }
+    ]
+  },
+  {
+    "lemma": "awards",
+    "pos": "N",
+    "gloss": "recognition or prizes given to people for their achievements",
+    "dewey": "700",
+    "t1_decomposition": "something(x) & give(x, people(y)) & recognize(y, achievement(z))",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "form_of",
+        "target": "award",
+        "weight": 1.0
+      },
+      {
+        "rel": "hypernym",
+        "target": "honor",
+        "weight": 0.85
+      }
+    ]
+  },
+  {
+    "lemma": "bear",
+    "pos": "N",
+    "gloss": "a large and powerful animal that lives in the forest or woods",
+    "dewey": "599",
+    "t1_decomposition": "animal(x) & big(x) & strong(x)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "animal",
+        "weight": 0.95
+      },
+      {
+        "rel": "part_of",
+        "target": "forest",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "lemma": "dick",
+    "pos": "N",
+    "gloss": "a vulgar term for a male genital organ",
+    "dewey": "611",
+    "t1_decomposition": "part(x) & body(x) & male(x)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "organ",
+        "weight": 0.95
+      },
+      {
+        "rel": "part_of",
+        "target": "body",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "lemma": "labour",
+    "pos": "N",
+    "gloss": "hard work or effort that people do to produce something",
+    "dewey": "331",
+    "t1_decomposition": "people(x) & work(x) & produce(x, something(y))",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "work",
+        "weight": 0.95
+      },
+      {
+        "rel": "synonym",
+        "target": "labor",
+        "weight": 0.95
+      }
+    ]
+  },
+  {
+    "lemma": "tech",
+    "pos": "N",
+    "gloss": "technology or machines that are used to make things or solve problems",
+    "dewey": "620",
+    "t1_decomposition": "something(x) & make(x, things(y)) & use(x, machine(z))",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "technology",
+        "weight": 0.95
+      },
+      {
+        "rel": "domain_topic",
+        "target": "engineering",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "lemma": "trees",
+    "pos": "N",
+    "gloss": "tall plants with a single main stem and branches",
+    "dewey": "582",
+    "t1_decomposition": "something(x) & plant(x) & tall(x)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "form_of",
+        "target": "tree",
+        "weight": 1.0
+      },
+      {
+        "rel": "hypernym",
+        "target": "plant",
+        "weight": 0.9
+      }
+    ]
+  }
+]

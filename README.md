@@ -9,6 +9,7 @@ Alice answers from a word map, a stack of vetted sentences, and a short list of 
 - `SPEC.md` is the contract. Version 1.1.0 records the measured baseline and the layers still to build.
 - `ROADMAP.md` and `QUEUE.md` are the work order.
 - `prompts/hydra/` holds the Free Forge prompts that repair glosses, Dewey codes, and kernel forms.
+- `SPEECH_CANON.md` is the rule for what Alice may say, cite, or withhold. The chain behind it is `../TRACTATUS_LOGICO_MECHANICUS.md`. The duty behind it is `../CRITIQUE_OF_MECHANICAL_REASON.md`.
 
 ## Verify
 

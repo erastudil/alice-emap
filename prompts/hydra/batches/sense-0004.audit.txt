@@ -1,0 +1,12 @@
+[
+  {"lemma":"teachers","verdict":"accept","reasons":["ok"]},
+  {"lemma":"audience","verdict":"accept","reasons":["ok"]},
+  {"lemma":"clothes","verdict":"accept","reasons":["ok"]},
+  {"lemma":"alternative","verdict":"accept","reasons":["ok"]},
+  {"lemma":"awards","verdict":"accept","reasons":["ok"]},
+  {"lemma":"bear","verdict":"accept","reasons":["ok"]},
+  {"lemma":"dick","verdict":"accept","reasons":["ok"]},
+  {"lemma":"labour","verdict":"accept","reasons":["ok"]},
+  {"lemma":"tech","verdict":"accept","reasons":["ok"]},
+  {"lemma":"trees","verdict":"accept","reasons":["ok"]}
+]

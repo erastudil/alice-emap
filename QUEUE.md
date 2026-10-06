@@ -32,6 +32,7 @@ One row is one admission. Status is `landed`, `open`, or `blocked`. Owner `local
 | Q3.2 | W3 | Pointer walk with hop list | local | open | receipt metadata includes the hops |
 | Q3.3 | W3 | Wire frames in front of RETRIEVE | local | open | old regex tests still pass through the frames |
 | Q3.4 | W3 | Tests for each new frame and for abstain | local | open | pytest exits 0 |
+| Q3.5 | W3 | Stamp every receipt with an act from `SPEECH_CANON.md` | local | open | each receipt is say, cite, silence-gap, silence-instrument, or silence-sample |
 | Q4.1 | W4 | Card compiler for `stacks/*/FACTS.md` | local | open | 1572 cards, ids stable across reruns |
 | Q4.2 | W4 | Anchor topics onto walkable lemma ids | local | open | every card has at least one anchor or an explicit unanchored flag |
 | Q4.3 | W4 | RETRIEVE returns the card comment and door | local | open | golden prompt file, one hit per card |

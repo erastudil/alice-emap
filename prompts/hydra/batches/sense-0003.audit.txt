@@ -1,0 +1,12 @@
+[
+  {"lemma": "hotel", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "judge", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "letter", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "material", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "planning", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "professor", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "showing", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "william", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "lake", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "photos", "verdict": "accept", "reasons": ["ok"]}
+]

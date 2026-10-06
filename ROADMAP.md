@@ -37,9 +37,9 @@ exit: stub T1 count is zero on repaired nodes. Dewey `813.54` survives only wher
 
 ## W3 frames
 
-Replace the three retrieve regular expressions with the L1 frame table. Keep COMPUTE first and ABSTAIN last. Record pointer hops on the receipt.
+Replace the three retrieve regular expressions with the L1 frame table. Keep COMPUTE first and ABSTAIN last. Record pointer hops on the receipt. Stamp each receipt with an act from `SPEECH_CANON.md`.
 
-exit: existing lattice tests pass, plus one test per new frame, plus the outside-domain abstain test.
+exit: existing lattice tests pass, plus one test per new frame, plus the outside-domain abstain test, plus an act name on every receipt.
 
 ## W4 stack cards
 

@@ -160,12 +160,20 @@ feature gate: each named EasyLM surface has one card, and a how-to prompt return
 
 hand gate: a prompt whose card is pinned never calls the network. A prompt whose card is fresh calls only a listed door.
 
-# 11. Where the work lives
+# 11. Speech
+
+Alice admits an emission by `SPEECH_CANON.md`. The acts are say, cite, and silence. Say is a check whose status was read. Cite is a stored sentence emitted with its address. Silence is a sample, a gap, or a failed instrument.
+
+The canon is the last link of `../TRACTATUS_LOGICO_MECHANICUS.md` and the procedure in the doctrine of method of `../CRITIQUE_OF_MECHANICAL_REASON.md`. A generated string is not a ground. A stack card is cited. A tool result is said. Fluency does not change the act.
+
+# 12. Where the work lives
 
 roadmap: `ROADMAP.md`.
 
 queue: `QUEUE.md`.
 
 repair prompts: `prompts/hydra/`.
+
+speech: `SPEECH_CANON.md`.
 
 drawings withdrawn from this contract: the product manifold, the 350M encoder, the relational graph network, the 1.5B planner, the 20 to 60 million zcab store, and split-conformal router training. Version 1.0.0 of this file described them as present. They are absent from the tree. The active path is the lattice, the walkable map, the cards, and the frames.
