@@ -1,0 +1,12 @@
+[
+  {"lemma":"fitness","verdict":"accept","reasons":["ok"]},
+  {"lemma":"francis","verdict":"accept","reasons":["ok"]},
+  {"lemma":"friendship","verdict":"accept","reasons":["ok"]},
+  {"lemma":"gary","verdict":"accept","reasons":["ok"]},
+  {"lemma":"idiot","verdict":"accept","reasons":["ok"]},
+  {"lemma":"keys","verdict":"accept","reasons":["ok"]},
+  {"lemma":"lawyers","verdict":"accept","reasons":["ok"]},
+  {"lemma":"lifetime","verdict":"accept","reasons":["ok"]},
+  {"lemma":"makeup","verdict":"accept","reasons":["ok"]},
+  {"lemma":"medal","verdict":"accept","reasons":["ok"]}
+]

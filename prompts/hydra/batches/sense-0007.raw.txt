@@ -1,0 +1,202 @@
+[
+  {
+    "lemma": "cooking",
+    "pos": "N",
+    "gloss": "the process of preparing food for people to eat",
+    "dewey": "641",
+    "t1_decomposition": "make(something) and eat(something)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "preparing",
+        "weight": 0.8
+      },
+      {
+        "rel": "hyponym",
+        "target": "baking",
+        "weight": 0.75
+      }
+    ]
+  },
+  {
+    "lemma": "clock",
+    "pos": "N",
+    "gloss": "an instrument that shows people the time of day",
+    "dewey": "681.1",
+    "t1_decomposition": "instrument(x) and show(x, time)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "timepiece",
+        "weight": 0.95
+      },
+      {
+        "rel": "has_part",
+        "target": "hand",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "lemma": "drinks",
+    "pos": "N",
+    "gloss": "liquids that people drink to satisfy their thirst",
+    "dewey": "641.2",
+    "t1_decomposition": "something and drink(something)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "form_of",
+        "target": "drink",
+        "weight": 1.0
+      },
+      {
+        "rel": "hypernym",
+        "target": "beverage",
+        "weight": 0.95
+      }
+    ]
+  },
+  {
+    "lemma": "ear",
+    "pos": "N",
+    "gloss": "the part of the body that people use to hear sounds",
+    "dewey": "611",
+    "t1_decomposition": "part(x) and hear(something)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "organ",
+        "weight": 0.95
+      },
+      {
+        "rel": "part_of",
+        "target": "head",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "skill",
+    "pos": "N",
+    "gloss": "the ability that people have to do something well",
+    "dewey": "153",
+    "t1_decomposition": "can(x) and do(something) and good(x)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "ability",
+        "weight": 0.9
+      },
+      {
+        "rel": "hyponym",
+        "target": "craft",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "lemma": "stomach",
+    "pos": "N",
+    "gloss": "the part of the body where food goes after people eat",
+    "dewey": "612",
+    "t1_decomposition": "part(x) and eat(something) and inside(x)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "organ",
+        "weight": 0.95
+      },
+      {
+        "rel": "part_of",
+        "target": "body",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "mum",
+    "pos": "N",
+    "gloss": "a woman who is the mother of someone",
+    "dewey": "306.85",
+    "t1_decomposition": "someone and mother(someone)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "mother",
+        "weight": 0.95
+      },
+      {
+        "rel": "synonym",
+        "target": "mom",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "opinions",
+    "pos": "N",
+    "gloss": "the beliefs or thoughts that people have about something",
+    "dewey": "121",
+    "t1_decomposition": "someone and think(something)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "form_of",
+        "target": "opinion",
+        "weight": 0.95
+      },
+      {
+        "rel": "hypernym",
+        "target": "belief",
+        "weight": 0.85
+      }
+    ]
+  },
+  {
+    "lemma": "patterns",
+    "pos": "N",
+    "gloss": "the regular arrangements of things that people see or make",
+    "dewey": "745",
+    "t1_decomposition": "something and see(something) and regular(something)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "form_of",
+        "target": "pattern",
+        "weight": 0.95
+      },
+      {
+        "rel": "hypernym",
+        "target": "design",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "lemma": "presents",
+    "pos": "N",
+    "gloss": "the things that people give to someone as a gift",
+    "dewey": "394",
+    "t1_decomposition": "something and give(something) and someone",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "form_of",
+        "target": "present",
+        "weight": 0.9
+      },
+      {
+        "rel": "hypernym",
+        "target": "gift",
+        "weight": 0.9
+      }
+    ]
+  }
+]

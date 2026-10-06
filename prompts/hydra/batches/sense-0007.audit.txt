@@ -1,0 +1,12 @@
+[
+  {"lemma":"cooking","verdict":"accept","reasons":["ok"]},
+  {"lemma":"clock","verdict":"accept","reasons":["ok"]},
+  {"lemma":"drinks","verdict":"accept","reasons":["ok"]},
+  {"lemma":"ear","verdict":"accept","reasons":["ok"]},
+  {"lemma":"skill","verdict":"accept","reasons":["ok"]},
+  {"lemma":"stomach","verdict":"accept","reasons":["ok"]},
+  {"lemma":"mum","verdict":"accept","reasons":["ok"]},
+  {"lemma":"opinions","verdict":"accept","reasons":["ok"]},
+  {"lemma":"patterns","verdict":"accept","reasons":["ok"]},
+  {"lemma":"presents","verdict":"accept","reasons":["ok"]}
+]

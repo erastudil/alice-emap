@@ -1,0 +1,202 @@
+[
+  {
+    "lemma": "fitness",
+    "pos": "N",
+    "gloss": "the state of being physically healthy and strong",
+    "dewey": "613.7",
+    "t1_decomposition": "STATE(x) ∧ PHYSICAL(x) ∧ HEALTHY(x)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "health",
+        "weight": 0.9
+      },
+      {
+        "rel": "hyponym",
+        "target": "physical fitness",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "lemma": "francis",
+    "pos": "N",
+    "gloss": "a male given name often associated with a person who is kind and gentle",
+    "dewey": "929.4",
+    "t1_decomposition": "someone ∧ NAME(x)",
+    "depth": 5,
+    "edges": [
+      {
+        "rel": "instance_of",
+        "target": "name",
+        "weight": 0.95
+      },
+      {
+        "rel": "has_instance",
+        "target": "pope francis",
+        "weight": 0.7
+      }
+    ]
+  },
+  {
+    "lemma": "friendship",
+    "pos": "N",
+    "gloss": "a close and supportive relationship between two people who care about each other",
+    "dewey": "177",
+    "t1_decomposition": "RELATION(x) ∧ BETWEEN(x, someone, someone)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "relationship",
+        "weight": 0.95
+      },
+      {
+        "rel": "hyponym",
+        "target": "close friendship",
+        "weight": 0.7
+      }
+    ]
+  },
+  {
+    "lemma": "gary",
+    "pos": "N",
+    "gloss": "a male given name often associated with a person who is strong and confident",
+    "dewey": "929.4",
+    "t1_decomposition": "someone ∧ NAME(x)",
+    "depth": 5,
+    "edges": [
+      {
+        "rel": "instance_of",
+        "target": "name",
+        "weight": 0.95
+      },
+      {
+        "rel": "has_instance",
+        "target": "gary cooper",
+        "weight": 0.6
+      }
+    ]
+  },
+  {
+    "lemma": "idiot",
+    "pos": "N",
+    "gloss": "a person who is not very intelligent or wise and often does foolish things",
+    "dewey": "153.9",
+    "t1_decomposition": "someone ∧ INTELLIGENCE(x, low)",
+    "depth": 4,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "fool",
+        "weight": 0.9
+      },
+      {
+        "rel": "antonym",
+        "target": "genius",
+        "weight": 0.85
+      }
+    ]
+  },
+  {
+    "lemma": "keys",
+    "pos": "N",
+    "gloss": "small objects used to open locks and gain access to something",
+    "dewey": "683",
+    "t1_decomposition": "something ∧ PURPOSE(x, OPEN(y))",
+    "depth": 4,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "tool",
+        "weight": 0.9
+      },
+      {
+        "rel": "hyponym",
+        "target": "car key",
+        "weight": 0.7
+      }
+    ]
+  },
+  {
+    "lemma": "lawyers",
+    "pos": "N",
+    "gloss": "people who practice law and help others with legal issues",
+    "dewey": "340",
+    "t1_decomposition": "someone ∧ PROFESSION(x, lawyer)",
+    "depth": 4,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "professional",
+        "weight": 0.9
+      },
+      {
+        "rel": "hyponym",
+        "target": "attorney",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "lemma": "lifetime",
+    "pos": "N",
+    "gloss": "the length of time that a person is alive and experiences different things",
+    "dewey": "304",
+    "t1_decomposition": "DURATION(x) ∧ OF(x, LIFE(y))",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "period",
+        "weight": 0.9
+      },
+      {
+        "rel": "part_of",
+        "target": "biography",
+        "weight": 0.7
+      }
+    ]
+  },
+  {
+    "lemma": "makeup",
+    "pos": "N",
+    "gloss": "cosmetics applied to the face to enhance or change one's appearance",
+    "dewey": "646",
+    "t1_decomposition": "something ∧ PURPOSE(x, APPLY(y, face))",
+    "depth": 4,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "cosmetic",
+        "weight": 0.95
+      },
+      {
+        "rel": "hyponym",
+        "target": "lipstick",
+        "weight": 0.7
+      }
+    ]
+  },
+  {
+    "lemma": "medal",
+    "pos": "N",
+    "gloss": "a small metal object awarded to someone as a symbol of achievement or honor",
+    "dewey": "737",
+    "t1_decomposition": "something ∧ PURPOSE(x, AWARD(y))",
+    "depth": 4,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "award",
+        "weight": 0.95
+      },
+      {
+        "rel": "hyponym",
+        "target": "gold medal",
+        "weight": 0.8
+      }
+    ]
+  }
+]
