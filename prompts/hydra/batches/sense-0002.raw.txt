@@ -1,0 +1,182 @@
+[
+  {
+    "lemma": "state",
+    "pos": "N",
+    "gloss": "a particular condition or status of something or someone",
+    "dewey": "120",
+    "t1_decomposition": "CONDITION(x)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "condition",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "three",
+    "pos": "N",
+    "gloss": "the number that comes after two and before four",
+    "dewey": "510",
+    "t1_decomposition": "NUMBER(x) & ONE(x) & ONE(x) & ONE(x)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "number",
+        "weight": 0.96
+      }
+    ]
+  },
+  {
+    "lemma": "thing",
+    "pos": "N",
+    "gloss": "an object or entity that exists or is perceived",
+    "dewey": "110",
+    "t1_decomposition": "SOMETHING(x)",
+    "depth": 1,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "entity",
+        "weight": 0.95
+      },
+      {
+        "rel": "hyponym",
+        "target": "object",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "house",
+    "pos": "N",
+    "gloss": "a building that serves as a dwelling or shelter for people",
+    "dewey": "728",
+    "t1_decomposition": "BUILDING(x) & BE_SOMEWHERE(x, PEOPLE(y))",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "building",
+        "weight": 0.95
+      },
+      {
+        "rel": "has_part",
+        "target": "room",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "place",
+    "pos": "N",
+    "gloss": "a particular location or area where something exists or happens",
+    "dewey": "910",
+    "t1_decomposition": "WHERE(x)",
+    "depth": 1,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "location",
+        "weight": 0.9
+      },
+      {
+        "rel": "hyponym",
+        "target": "area",
+        "weight": 0.85
+      }
+    ]
+  },
+  {
+    "lemma": "city",
+    "pos": "N",
+    "gloss": "a large and permanent human settlement",
+    "dewey": "307.76",
+    "t1_decomposition": "PLACE(x) & MANY(PEOPLE(y)) & BE_SOMEWHERE(y, x)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "settlement",
+        "weight": 0.93
+      }
+    ]
+  },
+  {
+    "lemma": "women",
+    "pos": "N",
+    "gloss": "adult human females",
+    "dewey": "305.4",
+    "t1_decomposition": "SOMEONE(x) & FEMALE(x) & ADULT(x)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "form_of",
+        "target": "woman",
+        "weight": 1.0
+      },
+      {
+        "rel": "hypernym",
+        "target": "person",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "business",
+    "pos": "N",
+    "gloss": "an activity or enterprise that is done to earn money",
+    "dewey": "650",
+    "t1_decomposition": "ACTIVITY(x) & DO(x, PEOPLE(y)) & WANT(y, MONEY(z))",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "enterprise",
+        "weight": 0.9
+      },
+      {
+        "rel": "domain_topic",
+        "target": "commerce",
+        "weight": 0.85
+      }
+    ]
+  },
+  {
+    "lemma": "week",
+    "pos": "N",
+    "gloss": "a period of seven consecutive days",
+    "dewey": "529",
+    "t1_decomposition": "SOME(x) & DAY(x) & SEVEN(x)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "period",
+        "weight": 0.85
+      },
+      {
+        "rel": "has_part",
+        "target": "day",
+        "weight": 0.95
+      }
+    ]
+  },
+  {
+    "lemma": "person",
+    "pos": "N",
+    "gloss": "an individual human being",
+    "dewey": "301",
+    "t1_decomposition": "SOMEONE(x) & HUMAN(x)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "organism",
+        "weight": 0.8
+      }
+    ]
+  }
+]

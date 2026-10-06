@@ -1,0 +1,152 @@
+[
+  {
+    "lemma": "\u03b6",
+    "pos": "N",
+    "gloss": "the eleventh letter of the Greek alphabet used in mathematics and science to represent various concepts",
+    "dewey": "510",
+    "t1_decomposition": "something(x) & symbol(x)",
+    "depth": 4,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "symbol",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "people",
+    "pos": "N",
+    "gloss": "human beings collectively",
+    "dewey": "300",
+    "t1_decomposition": "group(someone)",
+    "depth": 1,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "group",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "lemma": "body",
+    "pos": "N",
+    "gloss": "physical structure of a person or animal",
+    "dewey": "610",
+    "t1_decomposition": "part(something) & physical(something)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "organism",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "lemma": "kind",
+    "pos": "N",
+    "gloss": "a category of things having common characteristics",
+    "dewey": "001",
+    "t1_decomposition": "category(something)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "category",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "part",
+    "pos": "N",
+    "gloss": "a portion or division of a whole",
+    "dewey": "001",
+    "t1_decomposition": "part(something)",
+    "depth": 1,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "portion",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "one",
+    "pos": "N",
+    "gloss": "the number 1",
+    "dewey": "510",
+    "t1_decomposition": "number(one)",
+    "depth": 1,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "number",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "two",
+    "pos": "N",
+    "gloss": "the number 2",
+    "dewey": "510",
+    "t1_decomposition": "number(two)",
+    "depth": 1,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "number",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "words",
+    "pos": "N",
+    "gloss": "units of language with meaning",
+    "dewey": "400",
+    "t1_decomposition": "something(words)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "language",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "lemma": "moment",
+    "pos": "N",
+    "gloss": "very brief period of time",
+    "dewey": "115",
+    "t1_decomposition": "time(moment) & short(moment)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "time",
+        "weight": 0.9
+      }
+    ]
+  },
+  {
+    "lemma": "foot",
+    "pos": "N",
+    "gloss": "terminal weight-bearing part of the vertebrate leg",
+    "dewey": "611",
+    "t1_decomposition": "part(body) & part(leg)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "part_of",
+        "target": "leg",
+        "weight": 0.98
+      }
+    ]
+  }
+]

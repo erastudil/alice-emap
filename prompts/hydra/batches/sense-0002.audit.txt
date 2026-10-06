@@ -1,0 +1,12 @@
+[
+  {"lemma": "state", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "three", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "thing", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "house", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "place", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "city", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "women", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "business", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "week", "verdict": "accept", "reasons": ["ok"]},
+  {"lemma": "person", "verdict": "accept", "reasons": ["ok"]}
+]

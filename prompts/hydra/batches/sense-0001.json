@@ -1,0 +1,302 @@
+[
+  {
+    "id": 0,
+    "lemma": "\u03b6",
+    "pos": "N",
+    "gloss": "lambda",
+    "dewey": "510",
+    "t1_decomposition": "MATHEMATICAL(x)",
+    "depth": 0,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "target_lemma",
+        "weight": 0.95
+      },
+      {
+        "rel": "hypernym",
+        "target": "entity",
+        "weight": 0.9
+      },
+      {
+        "rel": "hypernym",
+        "target": "liquid",
+        "weight": 0.95
+      },
+      {
+        "rel": "hypernym",
+        "target": "...",
+        "weight": 0.9
+      },
+      {
+        "rel": "attribute_of",
+        "target": "provider",
+        "weight": 0.9
+      },
+      {
+        "rel": "has_instance",
+        "target": "food",
+        "weight": 0.8
+      },
+      {
+        "rel": "entails",
+        "target": "food",
+        "weight": 0.7
+      },
+      {
+        "rel": "hypernym",
+        "target": "jeps",
+        "weight": 0.95
+      },
+      {
+        "rel": "hypernym",
+        "target": "oklahoma sooners",
+        "weight": 0.95
+      },
+      {
+        "rel": "hypernym",
+        "target": "university of oklahoma",
+        "weight": 0.85
+      },
+      {
+        "rel": "hypernym",
+        "target": "oklahoma athletic teams",
+        "weight": 0.75
+      },
+      {
+        "rel": "instance_of",
+        "target": "sports team",
+        "weight": 0.6
+      },
+      {
+        "rel": "part_of",
+        "target": "university of oklahoma",
+        "weight": 0.55
+      },
+      {
+        "rel": "has_member",
+        "target": "sooner",
+        "weight": 0.5
+      },
+      {
+        "rel": "synonym",
+        "target": "university of oklahoma",
+        "weight": 0.2
+      },
+      {
+        "rel": "synonym",
+        "target": "oklahoma athletic teams",
+        "weight": 0.15
+      },
+      {
+        "rel": "synonym",
+        "target": "sooner",
+        "weight": 0.1
+      },
+      {
+        "rel": "synonym",
+        "target": "oklahoma sooners",
+        "weight": 0.05
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "lemma": "people",
+    "pos": "N",
+    "gloss": "human beings collectively",
+    "dewey": "305",
+    "t1_decomposition": "GROUP(x) \u2227 HUMAN(x)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "group",
+        "weight": 0.8
+      },
+      {
+        "rel": "hyponym",
+        "target": "population",
+        "weight": 0.7
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "lemma": "body",
+    "pos": "N",
+    "gloss": "physical structure of a person or animal",
+    "dewey": "611",
+    "t1_decomposition": "PHYSICAL(x) \u2227 ORGANISM(x)",
+    "depth": 3,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "organism",
+        "weight": 0.8
+      },
+      {
+        "rel": "has_part",
+        "target": "organ",
+        "weight": 0.7
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "lemma": "kind",
+    "pos": "N",
+    "gloss": "a category of things having common characteristics",
+    "dewey": "001",
+    "t1_decomposition": "CATEGORY(x)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "category",
+        "weight": 0.9
+      },
+      {
+        "rel": "hyponym",
+        "target": "type",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "lemma": "part",
+    "pos": "N",
+    "gloss": "a portion or division of a whole",
+    "dewey": "001",
+    "t1_decomposition": "PORTION(x) \u2227 PART_OF(x,y)",
+    "depth": 2,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "portion",
+        "weight": 0.9
+      },
+      {
+        "rel": "antonym",
+        "target": "whole",
+        "weight": 0.7
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "lemma": "one",
+    "pos": "N",
+    "gloss": "the number 1",
+    "dewey": "513",
+    "t1_decomposition": "NUMBER(x) \u2227 VALUE(x,1)",
+    "depth": 1,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "number",
+        "weight": 0.9
+      },
+      {
+        "rel": "hyponym",
+        "target": "unit",
+        "weight": 0.7
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "lemma": "two",
+    "pos": "N",
+    "gloss": "the number 2",
+    "dewey": "513",
+    "t1_decomposition": "NUMBER(x) \u2227 VALUE(x,2)",
+    "depth": 1,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "number",
+        "weight": 0.9
+      },
+      {
+        "rel": "hyponym",
+        "target": "pair",
+        "weight": 0.7
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "lemma": "words",
+    "pos": "N",
+    "gloss": "units of language with meaning",
+    "dewey": "410",
+    "t1_decomposition": "LINGUISTIC_UNIT(x)",
+    "depth": 4,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "language",
+        "weight": 0.8
+      },
+      {
+        "rel": "part_of",
+        "target": "sentence",
+        "weight": 0.7
+      }
+    ]
+  },
+  {
+    "id": 48,
+    "lemma": "moment",
+    "pos": "N",
+    "gloss": "very brief period of time",
+    "dewey": "115",
+    "t1_decomposition": "TIME(x) \u2227 SHORT(x)",
+    "depth": 4,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "time",
+        "weight": 0.9
+      },
+      {
+        "rel": "hyponym",
+        "target": "a-short-time",
+        "weight": 0.8
+      }
+    ]
+  },
+  {
+    "id": 78,
+    "lemma": "foot",
+    "pos": "N",
+    "gloss": "terminal weight-bearing part of the vertebrate leg",
+    "dewey": "611.98",
+    "t1_decomposition": "TERMINAL_PART(LEG(x)) & LOCOMOTIVE_BASE(x)",
+    "depth": 5,
+    "edges": [
+      {
+        "rel": "hypernym",
+        "target": "extremity",
+        "weight": 0.95
+      },
+      {
+        "rel": "part_of",
+        "target": "leg",
+        "weight": 0.98
+      },
+      {
+        "rel": "has_part",
+        "target": "toe",
+        "weight": 0.95
+      },
+      {
+        "rel": "instrument_of",
+        "target": "walk",
+        "weight": 0.92
+      }
+    ]
+  }
+]

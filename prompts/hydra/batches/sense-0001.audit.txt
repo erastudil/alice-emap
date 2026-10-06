@@ -1,0 +1,52 @@
+[
+  {
+    "lemma": "\u03b6",
+    "verdict": "accept",
+    "reasons": ["ok"]
+  },
+  {
+    "lemma": "people",
+    "verdict": "accept",
+    "reasons": ["ok"]
+  },
+  {
+    "lemma": "body",
+    "verdict": "accept",
+    "reasons": ["ok"]
+  },
+  {
+    "lemma": "kind",
+    "verdict": "accept",
+    "reasons": ["ok"]
+  },
+  {
+    "lemma": "part",
+    "verdict": "accept",
+    "reasons": ["ok"]
+  },
+  {
+    "lemma": "one",
+    "verdict": "accept",
+    "reasons": ["ok"]
+  },
+  {
+    "lemma": "two",
+    "verdict": "accept",
+    "reasons": ["ok"]
+  },
+  {
+    "lemma": "words",
+    "verdict": "accept",
+    "reasons": ["ok"]
+  },
+  {
+    "lemma": "moment",
+    "verdict": "accept",
+    "reasons": ["ok"]
+  },
+  {
+    "lemma": "foot",
+    "verdict": "accept",
+    "reasons": ["ok"]
+  }
+]
