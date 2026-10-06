@@ -1,163 +1,171 @@
 ﻿---
-title: "Alice 1.0 EMap Technical Architecture Specification"
-version: "1.0.0"
+title: "Alice 1.0 EMap — active contract"
+version: "1.1.0"
 status: canon
 layer: architecture
 home: emap/SPEC.md
 dialect: progen-spec
+measured: "2026-10-06"
 ---
 
-# 1. System Boundary and Operating Invariants
+# 1. What Alice is
 
-system boundary: emap constitutes the immutable typed evidence-bearing knowledge graph; Alice 1.0 constitutes the constrained navigation and arbitration decision layer.
-substrate isolation: model priors carry zero truth value for factual claims; semantic proximity directs search and never establishes truth.
-ground truth precedence: deterministic tool execution strictly precedes valid factual zcab; valid factual zcab strictly precedes multi-source whitelisted web evidence; multi-source web evidence strictly precedes abstention.
-provenance invariant: every factual emission carries an immutable provenance trace comprising an exact tool execution digest, a zcab content hash, or a whitelisted source URL span.
-routing optimality: router path selection executes cost-sensitive classification against an empirical oracle under split-conformal risk bounds.
-untrusted input boundary: all external web spans are consumed strictly as inert structured data tokens; executable instruction channels inside retrieved web data are structurally discarded.
+Alice answers a prompt by finding a vetted sentence or by running a typed tool.
 
-# 2. Mathematical Representation and Graph Topology
+The map stores what words mean and which words relate to which other words, under a closed set of relation names.
 
-## 2.1 Inventory and Identity Addressing
+A prompt is a sequence of tokens. Each token is either a closed operator or a pointer into the map. Operators select a frame. Pointers select a shelf. The pair is a lookup key.
 
-lemma count: 44000 normalized lexical lemmas grounded in the Goddard-Wierzbicka Natural Semantic Metalanguage kernel and English Wiktionary frequency ceiling.
-sense count: 75000 discrete sense nodes yielding mean polysemy ratio 1.705.
-node identity scheme: 32-bit stable unsigned integer address space.
-address bit fields: bits 31..29 part of speech (3 bits, 8 classes); bits 28..26 abstraction tier (3 bits, T0 to T4); bits 25..0 local node identifier (26 bits, 67.1M capacity).
-node type partitions: Lemma, Sense, Concept, Predicate, Taxon, Stack, Claim, Source, Tool, Procedure.
-information content metric: IC(v) = -log P(v), where P(v) represents corpus-smoothed probability monotonically propagated over hypernym DAG satisfying P(v) >= sum(P(children)).
+The emitted sentence is a stack card, a feature card, a tool result, or the abstain line. Alice authors none of them.
 
-## 2.2 Product Manifold Geometry
+Model weights carry zero truth value for a factual claim. A synonym edge may walk one wording onto another. The walk never creates a fact.
 
-geometric space: Riemannian product manifold M = L^32 x S^64 x R^128.
-hyperbolic component: L^32 denotes 32-dimensional Lorentz hyperboloid manifold encoding hierarchical hypernymy and taxonomic depth.
-lorentz inner product: <x, y>_L = -x_0 y_0 + sum_{i=1}^{31} x_i y_i.
-lorentz distance: d_L(x, y) = arcosh(-<x, y>_L).
-generality norm: origin distance ||x||_L encodes concept generality; small norm represents high abstraction.
-spherical component: S^64 denotes 64-dimensional unit sphere encoding distributional, functional, and synonymic similarity.
-spherical distance: d_S(x, y) = arccos(x . y).
-euclidean relational component: R^128 denotes 128-dimensional vector space modeling typed relation operators via RotatE complex pairs with distance score_r(u, v) = -||u o rho_r - v||.
-composite semantic distance: d_M(u, v) = sqrt(alpha * d_L(u, v)^2 + beta * d_S(u, v)^2 + gamma * ||u_e - v_e||^2).
-discrete facets: sparse typed categorical fields comprising ontological_kind, domain_memberships, temporal_character, agency, materiality, quantity_dimension, causal_role.
+# 2. Measured baseline
 
-## 2.3 Graph Data Structures and Storage
+baseline date: 2026-10-06, read from `emap.db` and `emap_csr.json` in this repository.
 
-graph representation: directed typed multigraph G = (V, E, R, w, kappa) with 75000 senses, ~2.3M directed edges, 24 closed relation classes.
-in-memory storage: Compressed Sparse Row (CSR) for outgoing traversals and Compressed Sparse Column (CSC) for incoming traversals, partitioned per relation type.
-csr layout: indptr int32[N+1], indices int32[|E_r|], weights fp16[|E_r|], relation_type uint8[|E_r|].
-graph memory footprint: core CSR/CSC topology occupies 18.2 MB; hypernym reachability bit-ancestor matrix occupies 4.5 MB; total graph structure remains L3/RAM resident under 25 MB.
-vector embedding storage: manifold coordinates (75k x 224 x fp16 = 33.6 MB) plus text anchor embeddings (75k x 768 x fp16 = 115.2 MB) total 148.8 MB.
-snapshot immutability: read-only memory-mapped binary images tagged with Merkle root digest over nodes, edges, zcabs, and schemas.
+lemma inventory: 44000 rows in `lemmas`.
 
-## 2.4 Cross-Domain Bridge Edges
+sense nodes: 24240 rows in `nodes`. 19760 inventory lemmas have no sense.
 
-bridge definition: typed non-hierarchical edge connecting taxonomically distant concepts exhibiting functional, structural, or mechanistic isomorphism.
-structural bridge candidate score: b(u, v) = s_S(u, v) * s_struct(u, v) * (1 - exp(-d_L(u, v) / tau)) * I[depth(LCS(u, v)) <= D_0].
-relational role signature: s_struct(u, v) represents Jaccard similarity across 1-hop typed role neighborhoods sig(u) = {(r, domain(n)) : (u, r, n) in E}.
-taxonomic divergence constraint: D_0 = 3 forces lowest common subsumer to root levels, ensuring cross-domain validity.
-bridge typology: identity, application, mechanism, measurement, analogy, constraint.
-bridge traversal cost: elevated traversal penalty kappa prevents fact inheritance leaks; bridge edges permit candidate discovery and analogical retrieval exclusively.
+kernel flag: 120 lemmas marked `is_kernel = 1`.
 
-# 3. Layered Abstraction Tiers (T0 to T4)
+edges: 21195 rows in `edges`. Every row has `target_id` NULL. 14457 targets have no sense node. 1353 edges point a lemma at itself.
 
-tier T0 lexical base: 44000 lemmas and 75000 senses; sense definitions strictly conform to inductive vocabulary bootstrap order.
-tier T1 primitive predicates: 1500 nodes comprising 65 NSM primes (DO, HAPPEN, MOVE, HAVE, KNOW, WANT, PART, KIND, BEFORE), 1200 FrameNet-class schemas, and 250 typed attribute predicates.
-semantic decomposition: T0 senses map to typed lambda-calculus ASTs of <= 32 nodes paired with sparse 1500-dimensional indicator vectors.
-slot typing check: hyperbolic entailment cones on L^32 enforce argument types via closed-form angle evaluation in O(d_h).
-tier T2 domain taxonomies: Dewey Decimal Classification spine (10 classes, 100 divisions, 1000 sections) integrated with specialized technical ontologies (QUDT units, IUPAC chemistry, NCBI taxonomy, ISO administrative regions).
-dewey coordinate address: DDC.section (+) T1.predicate (+) T0.anchor denotes unique storage shelf.
-tier T3 ontological meta-stacks: 120 meta-nodes structured across 4 orthogonal axes (BFO/DOLCE category, modal status, temporal volatility half-life tau_p, resolution affinity vector rho in Delta^4).
-tier T4 answer stacks: governed materialized views of factual zcabs, Dewey-indexed passages, and pre-indexed retrieval tables.
-inter-tier projection: soft projection matrix P_k in R^{|V_k| x |V_{k+1}|} induces upper adjacency A_{k+1}^{(r)} = P_k^T A_k^{(r)} P_k, ensuring higher tiers strictly aggregate verified empirical base evidence.
+relation mix: hypernym 5480, synonym 3583, entails 3263, instance_of 1766, antonym 1028, derivation 994, and the remaining closed names down to bridge_analogy 27. All 24 canonical names occur.
 
-# 4. Storage Substrates and Tool Execution Contracts
+dewey outlier: code `813.54` sits on 2158 nodes, the largest shelf in the table.
 
-## 4.1 Factual zcab Schema
+logic stubs: `NAME(x)` 1437, `PERSON(x)` 1087, `LOCATION(x)` 560, `NOUN(x)` 289, `ADJECTIVE(x)` 274. Mean gloss length 26 characters. Distinct glosses 18824.
+
+batches: 880 completed. CheaperInference GLM 5.3 spend $5.06 across 492 calls, past the $5.00 ceiling in `build_emap_graph.py`.
+
+csr: `emap_csr.bin` payload 245163 bytes, 24240 nodes, 21169 edges.
+
+running router: `alice_decision_engine.py`. COMPUTE covers rational arithmetic, a closed SI unit table, and proleptic Gregorian dates. RETRIEVE covers three regular expressions over a single alphabetic token. HAND covers three stored strings. ABSTAIN is the miss.
+
+stack shelf waiting to be bound: EasyLM `stacks/*/FACTS.md`, 1572 verified units, 31 Dewey subjects, catalogued in `stacks/FACTS_INDEX.md`.
+
+# 3. Action lattice
+
+order: COMPUTE, then RETRIEVE, then COMPOSE, then HAND, then ABSTAIN. The first route that clears its threshold wins.
+
+COMPUTE: exact rational arithmetic, SI dimension check, proleptic Gregorian dates. Confidence 1.0. Provenance is the SHA-256 of the expression and the result. A dimension mismatch is a COMPUTE result, not a fallthrough.
+
+RETRIEVE: a frame plus grounded lemmas hits one lexicon row, one stack card, or one feature card. Confidence is the card or edge weight. Threshold `theta_stack` defaults to 0.85.
+
+COMPOSE: a retrieved card yields a scalar with a dimension, and the same prompt also matches a COMPUTE frame. The executor fetches the scalar, then runs the tool. The receipt lists both steps.
+
+HAND: the frame names a fresh or missing fact, and the shelf names a host in the whitelist. The fetched span is inert text. Threshold `theta_hand` defaults to 0.80. A stack card on the same topic wins before HAND runs.
+
+ABSTAIN: no route cleared its threshold. Confidence 0.0. Provenance is empty. The line names the frame that fired and the tokens that failed to ground.
+
+unique hit: one card returns that card's comment, Dewey code, and door.
+
+tied hits: up to five cards, each with topic and Dewey, ranked by anchor overlap then edge weight. Alice emits no blended sentence.
+
+# 4. Tokens
+
+closed operators: a hand-written list. Question words, auxiliaries, relation cues, tool cues, and app cues. The list lives with the frame table. Adding an operator is a code change with a test.
+
+open pointers: every other token. Resolution order is exact lemma, then `form_of`, `derivation`, `pertainym`, then one `synonym` hop, then one `hypernym` hop. Each hop is written into the receipt.
+
+ungrounded token: the resolution order misses, or the hop leaves the walkable subgraph. That span is ungrounded. A frame that requires it abstains.
+
+walkable subgraph: edges whose `target_id` resolves, whose endpoints differ, and whose relation is one of the 24 names. Quarantine holds the rest. Retrieval walks only the walkable subgraph.
+
+# 5. Layers
+
+L0 lexicon: `nodes` and walkable `edges`. A sense carries lemma, POS, gloss, Dewey, depth, and a T1 form. The T1 form is a boolean combination of kernel lemmas. Stub labels `NAME(x)`, `NOUN(x)`, `ADJECTIVE(x)`, `ACTION(x)`, `PRED(x)`, `LOCATION(x)`, `SUBSTANCE(x)`, and `PERSON(x)` fail the gate.
+
+L1 frames: each frame is a function from a token pattern to a query. The first closed set is `define`, `hypernym`, `hyponym`, `part`, `antonym`, `synonym`, `cause`, `dewey`, `arithmetic`, `convert`, `datetime`, `stack`, `feature`, `fresh`.
+
+L2 stack cards: one card per EasyLM fact unit. Fields are topic, comment, Dewey, door, anchor lemma ids, and the frame ids that sentence answers. The comment is the answer text.
+
+L3 feature cards: the same record for EasyLM surfaces. The first deck is AtMem, governed mandates, the vault, kid-safe mode, Studio read, Studio write, Studio code, Studio graph, Studio draw, the seven Learn courses, local hands, network hands, and the model tiers named in the EasyLM README.
+
+L4 chain rules: COMPOSE patterns. A dimensioned scalar plus a convert frame calls the unit tool. A date plus a day-offset frame calls the calendar tool. The rule list is source.
+
+L5 walk: teaching mode, after a shelf is chosen, returns the next written textbook span for that topic. Order inside a span is the concrete sentence, then the name. Alice navigates text she did not write.
+
+# 6. Card record
 
 ```json
 {
-  "zcab_id": "u64_content_hash",
-  "subject_id": "sense_id_or_entity_qid",
-  "predicate_id": "t1_predicate_id",
-  "object": {
-    "type": "literal_or_id",
-    "value": "scalar_value",
-    "dimension_vector": [0, 0, 0, 0, 0, 0, 0],
-    "unit": "qudt_symbol",
-    "precision": 1e-6
-  },
-  "temporal_validity": ["t_start", "t_end"],
-  "provenance": [{
-    "source_id": "sha256_hash",
-    "locator": "section_or_span",
-    "retrieved_at": "iso_timestamp",
-    "extraction_method": "deterministic_or_audited"
-  }],
-  "confidence_base": 0.995,
-  "volatility_half_life": "tau_seconds",
-  "verification_tier": "human_or_multisource",
-  "supersedes": []
+  "card_id": "sha256 of source path, line, and topic",
+  "kind": "stack or feature",
+  "topic": "speed of light in vacuum",
+  "comment": "the sentence that may be emitted",
+  "dewey": "530",
+  "door": "https://physics.nist.gov/cuu/Constants/",
+  "anchors": ["light", "speed", "vacuum"],
+  "frames": ["define", "stack"],
+  "volatility": "pinned or fresh"
 }
 ```
 
-dimension vector: integer array delta in Z^7 representing SI base dimensions (Length, Mass, Time, Electric Current, Thermodynamic Temperature, Amount of Substance, Luminous Intensity).
-freshness decay function: conf_eff(z, t) = conf_base(z) * exp(-(t - t_verified) / tau_p).
-stack servability threshold: conf_eff(z, t) >= 0.97 qualifies zcab for immediate atomic emission; sub-threshold records trigger search hand refresh.
-contradiction prevention: functional predicates reject overlapping temporal spans with conflicting objects at build time.
+pinned: the card is the answer until a human edits the source line.
 
-## 4.2 Search Hands (Whitelisted Agent Tools)
+fresh: the card names the door, and HAND may refresh the span when the prompt asks for the live page. The card still wins for the pinned wording.
 
-whitelist enforcement: out-of-band network proxies enforce strict protocol, host, port, path, and re-resolved IP restrictions; raw HTML is parsed into isolated frame slots.
-extraction consensus: multi-source agreement requires score s(a*) >= theta_hand across >= 2 independent whitelisted domains or 1 authoritative domain with domain trust prior t_d in (0, 1].
-write-back feedback: verified hand extractions enter candidate zcab intake queues with automatic promotion on k independent confirmations.
+# 7. Graph contract
 
-## 4.3 Deterministic Tool Engines
+closed relations: hypernym, hyponym, instance_of, has_instance, part_of, has_part, member_of, has_member, substance_of, synonym, antonym, derivation, pertainym, form_of, has_form, entails, causes, agent_of, patient_of, instrument_of, attribute_of, domain_topic, bridge_analogy, bridge_function.
 
-math engine: arbitrary precision rational CAS (SymPy / exact algebra kernel), interval arithmetic for transcendentals; returns exact rational and strict numerical bound.
-units engine: dimensional algebra verifying delta_1 == delta_2 for addition/subtraction and summing delta vectors for multiplication; conversion executed via pinned rational transformation tables.
-datetime engine: proleptic Gregorian calendar, pinned IANA tzdb version, leap second tables; outputs strict ISO 8601 strings and exact elapsed durations.
-database engine: read-only parameterized query templates against pinned database snapshot identifiers.
-exact solver: SAT/SMT (Z3 kernel), Mixed Integer Linear Programming (CBC/HiGHS) under strict execution time limits returning formal certificates of SAT, UNSAT, or TIMEOUT.
+identity: 32-bit id. Bits 31..29 are POS. Bits 28..26 are tier. Bits 25..0 are the local id. Packing lives in `pack_node_id`.
 
-# 5. Alice 1.0 Decision Model Architecture
+edge row: `source_id`, `target_id`, `relation`, `weight` in (0, 1], `source_lemma`, `target_lemma`. A walkable row has both ids set and `source_lemma != target_lemma`.
 
-## 5.1 Formulation and Optimization Objective
+dewey: a code from the EasyLM stack table, or a finer DDC section whose parent is one of those codes. Code `813.54` is legal only when the gloss is a work of American fiction. The stack parents are 001, 004, 005, 005.8, 006, 100, 150, 181, 200, 300, 320, 330, 340, 400, 510, 520, 530, 540, 550, 570, 610, 620, 630, 650, 690, 700, 780, 800, 811, 900, 910.
 
-action space: A = {RETRIEVE, HAND, COMPUTE, COMPOSE, ABSTAIN}.
-decision objective: a* = argmin_{a in A} [(1 - p_a(q)) * C_err(q) + lambda_L * E[L_a] + lambda_$ * c_a] subject to calibrated p_a(q) >= 1 - epsilon_risk(q).
-risk calibration: split-conformal calibration computes action thresholds per T2 domain risk class (health/financial epsilon=0.001, technical epsilon=0.01, general epsilon=0.05).
+kernel: the 120 primes in `hnai/english-map/dict/00-kernel.json`. A T1 form may name only those lemmas, joined by `and`, `or`, and `not`.
 
-## 5.2 Model Components
+gloss: one sentence of at least eight words. It defines the lemma in simpler words. It does not copy the lemma as the whole gloss.
 
-query encoder: 350M parameter bidirectional int8 transformer producing span mention embeddings, T1 frame/slot hypotheses, T3 facet classifications, and query decomposition markers.
-subgraph extractor: extracts bounded k-hop neighborhood (k <= 2, |V_sub| <= 512) around candidate senses; executes 2-layer Relational Graph Attention Network (R-GAT) over manifold coordinates.
-coverage probe: non-neural sub-2ms exact index probe testing (sense, predicate, qualifiers) and checking inheritable hypernym ancestor chains.
-router head: MLP over [E_cls (+) g_q (+) c_q (+) rho(T3) (+) volatility] outputting calibrated action probabilities.
-dsl planner: 1.5B parameter int8 transformer invoked strictly for COMPUTE, HAND, or COMPOSE actions; constrained by Context-Free Grammar masking to emit valid typed execution plans.
-executor: parallel asynchronous DAG scheduler executing tool calls, database lookups, and whitelisted web hands.
-arbiter: enforces strict precedence lattice (COMPUTE > RETRIEVE > HAND > ABSTAIN) and verifies unit dimensionality, datetime bounds, and factual provenance.
-renderer: template-based slot filler for atomic retrievals; constrained grounded language model for synthesized compositions with mandatory citation slot validation.
+# 8. Whitelist
 
-# 6. Resource Budgets and Latency Envelopes
+class list: EasyLM `stacks/TRUSTED_SOURCES.md`.
 
-token budget input: query text <= 512 tokens; planner context <= 1536 tokens; evidence context <= 2560 tokens; plan output <= 128 tokens; final render <= 384 tokens; hard ceiling 4096 tokens per call.
-memory budget GPU: encoder int8 0.35 GB; planner int8 1.50 GB; hot graph topology 0.20 GB; total GPU VRAM allocation under 3.5 GB.
-memory budget host: hot zcab cache and exact index 4.0 GB; HNSW passage vector index 6.0 GB; total host RAM allocation under 16.0 GB.
-latency atomic retrieve: p50 <= 45 ms; p95 <= 120 ms (encoder 12 ms, probe 4 ms, R-GAT 6 ms, template render 10 ms, IPC 40 ms).
-latency compute path: p50 <= 150 ms; p95 <= 350 ms (plan generation 180 ms, tool execution <= 50 ms).
-latency hand path: p50 <= 900 ms; p95 <= 2500 ms (parallel network fetches 1200 ms, batched extraction 150 ms).
-speculative execution: queries with router entropy H(p) > eta initiate top-2 actions concurrently, cancelling redundant branch upon arbitration.
+door list: each pack `LINK_INDEX.md`, plus the default doors in that trusted-sources file.
 
-# 7. Training and Construction Phases
+baseline hosts still in code: `en.wikipedia.org`, `wikipedia.org`, `w3.org`, `nist.gov`, `ncbi.nlm.nih.gov`, `github.com`, and the three stored strings for the speed of light, the gravitational constant, and the Python release date.
 
-phase P0 lexical inventory: normalize 44000 lemmas into 75000 senses; assign stable 32-bit IDs; calculate smoothed IC values; exit gate sense granularity kappa >= 0.75 on 2000 audited lemmas.
-phase P1 graph structure: import lexical/taxonomic relations; enforce inverse symmetry; eliminate hypernym cycles; compile CSR/CSC binaries; exit gate 0 taxonomic cycles, edge precision >= 0.95.
-phase P2 product manifold: train L^32 x S^64 x R^128 embeddings via Riemannian Adam; optimize L_hyp + L_sim + L_rel + L_norm; exit gate mAP >= 0.95, MRR >= 0.45, Spearman rho >= 0.65.
-phase P3 bridge discovery: mine cross-domain analogies via S^64 proximity and structural role signatures; apply LCS root filter; exit gate 150000 bridges with audit precision >= 0.90.
-phase P4 abstraction tiers: build T1 lambda-AST decompositions; map T2 Dewey taxonomies; populate T3 meta-stack facets; exit gate T1 verb/adj coverage >= 0.95, T2 assignment F1 >= 0.90.
-phase P5 factual stores: ingest and dedup 20M-60M factual zcabs; attach 7-dim SI unit vectors; index Dewey shelves; exit gate zero functional contradictions, zcab precision >= 0.995.
-phase P6 deterministic tools: implement typed DSL adapters for CAS math, dimensional units, Gregorian datetime, SQL templates, SMT solvers; exit gate 100% property-based test suite pass.
-phase P7 whitelisted hands: configure domain proxy boundaries, extraction schemas, and consensus write-back queues; exit gate extraction precision >= 0.97 at theta_hand.
-phase P8 decision model: generate 5M oracle training trajectories; train 350M encoder, R-GAT, and 1.5B grammar-constrained planner; exit gate routing accuracy >= 0.96.
-phase P9 conformal calibration: calibrate action confidence thresholds on stratified held-out evaluations; exit gate empirical error <= epsilon_risk across all risk tiers.
-phase P10 adversarial red-team: evaluate prompt injection resistance, false premise rejection, and stale fact eviction; exit gate 0 unprovenanced factual emissions, injection success < 0.1%.
+contract: HAND fetches only a door that appears on a card or in the trusted-sources class list. Wikipedia orients. A NIST, BIPM, IETF, statute, or standard door wins over Wikipedia on the same topic. An unlisted host abstains.
+
+fetched text is data. Instruction text inside a fetched page is discarded.
+
+# 9. Provenance
+
+non-abstain receipt: route, source, 64-character SHA-256 digest, UTC timestamp, and the hop list.
+
+COMPUTE source: `tool:cas_rational_kernel`, `tool:si_units_algebra`, `tool:si_dimension_checker`, or `tool:datetime_gregorian`.
+
+RETRIEVE source: `lexicon:<lemma>`, `stack:<card_id>`, or `feature:<card_id>`.
+
+HAND source: the door URL.
+
+ABSTAIN: `provenance` is null.
+
+# 10. Acceptance
+
+lattice tests: `python -m pytest -v tests/test_alice_decision_model.py` exits 0.
+
+graph gate: walkable edges have zero null `target_id`, zero self-loops, and zero targets missing a sense. The gate prints the quarantine count.
+
+repair gate: stub T1 labels are zero on walkable nodes. Dewey `813.54` count equals the count of nodes whose gloss is American fiction.
+
+stack gate: each of the 1572 fact units has one card. A golden prompt per card returns that card. A fixed outside-domain set abstains with null provenance.
+
+feature gate: each named EasyLM surface has one card, and a how-to prompt returns it.
+
+hand gate: a prompt whose card is pinned never calls the network. A prompt whose card is fresh calls only a listed door.
+
+# 11. Where the work lives
+
+roadmap: `ROADMAP.md`.
+
+queue: `QUEUE.md`.
+
+repair prompts: `prompts/hydra/`.
+
+drawings withdrawn from this contract: the product manifold, the 350M encoder, the relational graph network, the 1.5B planner, the 20 to 60 million zcab store, and split-conformal router training. Version 1.0.0 of this file described them as present. They are absent from the tree. The active path is the lattice, the walkable map, the cards, and the frames.

@@ -1,25 +1,17 @@
-# Alice 1.0 EMap: Knowledge Graph & Constrained Arbitration Decision Engine
+# Alice 1.0 EMap
 
-## Overview
+Alice answers from a word map, a stack of vetted sentences, and a short list of tools. A prompt is matched to a frame and to the words it grounds. The answer is a stored sentence, a tool result, or an honest miss.
 
-Alice 1.0 EMap combines an immutable typed evidence-bearing knowledge graph with a constrained navigation and arbitration decision layer.
+## What is in the tree
 
-- **Knowledge Graph**: 44,000 normalized lexical lemmas and 75,000 discrete senses mapped across Riemannian product manifold geometry and Compressed Sparse Row (CSR) binary topology.
-- **Decision Engine (lice_decision_engine.py)**: Calibrated arbitration lattice operating under split-conformal risk bounds across discrete actions:
-  - COMPUTE: Exact rational CAS math, proleptic Gregorian calendar calculations, and SI 7-dimension unit dimensional algebra.
-  - RETRIEVE: Topological navigation over SQLite/CSR Dewey classification coordinate stacks.
-  - HAND: Whitelisted out-of-band proxy tool execution with strict domain access control.
-  - ABSTAIN: Calibrated refusal for ungrounded or out-of-domain queries.
-- **Zero-Unprovenanced Fact Invariant**: All non-abstain answers carry an immutable 64-character SHA-256 provenance digest.
+- `alice_decision_engine.py` walks COMPUTE, then RETRIEVE, then HAND, then ABSTAIN.
+- `emap.db` holds 44000 lemmas and 24240 sense nodes. The edge table still needs the walkable-graph pass in `ROADMAP.md`.
+- `SPEC.md` is the contract. Version 1.1.0 records the measured baseline and the layers still to build.
+- `ROADMAP.md` and `QUEUE.md` are the work order.
+- `prompts/hydra/` holds the Free Forge prompts that repair glosses, Dewey codes, and kernel forms.
 
-## Architecture
+## Verify
 
-Formal architecture and operational contracts are fully specified in [SPEC.md](SPEC.md).
-
-## Verification
-
-Run the test suite with pytest:
-
-`ash
+```bash
 python -m pytest -v tests/test_alice_decision_model.py
-`
+```
