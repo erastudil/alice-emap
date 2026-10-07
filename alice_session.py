@@ -1,6 +1,10 @@
 """One Alice turn for Hydra and for the EasyLM web path.
 
-Order: memory command, then the lattice, then a stack card, then a feature card, then a named gap.
+She reads the prompt in layers first: speech act, frame, slots, instrument, authority, shelves.
+Memory commands run before any of that fires.
+An orchestration frame cites the Hydra command and does not launch it.
+A sense frame runs the local instrument and reads the result back.
+Everything else walks compute, the lexicon, stack cards, feature cards, knowledge cards, then the whitelist.
 A personality is carried on the receipt. It does not rewrite the sentence.
 """
 
@@ -10,6 +14,7 @@ import argparse
 import json
 import re
 import sys
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -19,8 +24,11 @@ from alice_decision_engine import (
     DeterministicEngine,
     WhitelistedHandProxy,
 )
+from alice_interpret import Reading, interpret
+from alice_knowledge import search_knowledge
 from alice_memory import MemoryStore
 from alice_personalities import mandate_for, resolve_personality
+from alice_senses import browse, hear_audio, search_code, see_image, write_drawing
 
 REMEMBER = re.compile(
     r"^remember(?:\s+(rule|goal|preference|fact|insight))?\s*:\s*(.+)$",
@@ -51,6 +59,10 @@ def _receipt(
     shelves: list,
     next_shelf: str,
     provenance: Optional[dict] = None,
+    frame: str = "",
+    tool: str = "",
+    command: str = "",
+    layers: Optional[list] = None,
 ) -> dict:
     return {
         "act": act,
@@ -63,6 +75,10 @@ def _receipt(
         "shelves": shelves,
         "next": next_shelf,
         "provenance": provenance,
+        "frame": frame,
+        "tool": tool,
+        "command": command,
+        "layers": list(layers or []),
     }
 
 
@@ -72,27 +88,53 @@ def run_turn(
     memory_path: Optional[Path] = None,
     cards_path: Optional[Path] = None,
     engine: Optional[AliceDecisionEngine] = None,
+    drawing_dir: Optional[Path] = None,
+    workspace: Optional[Path] = None,
 ) -> dict:
     personality_id = resolve_personality(personality)
     text = query.strip()
     store = MemoryStore(memory_path) if memory_path else None
     try:
-        return _run_turn(text, personality_id, store, cards_path, engine or AliceDecisionEngine())
+        return _run_turn(
+            text,
+            personality_id,
+            store,
+            cards_path,
+            engine or AliceDecisionEngine(),
+            drawing_dir,
+            workspace or Path.cwd(),
+        )
     finally:
         if store:
             store.close()
 
 
-def _run_turn(text, personality_id, store, cards_path, engine: AliceDecisionEngine) -> dict:
+def _run_turn(
+    text,
+    personality_id,
+    store,
+    cards_path,
+    engine: AliceDecisionEngine,
+    drawing_dir: Optional[Path],
+    workspace: Path,
+) -> dict:
+    reading = interpret(text, personality_id)
     shelves = ["memory"]
     memory_hits = store.search(text) if store else []
+
+    def finish(**kwargs) -> dict:
+        kwargs.setdefault("frame", reading.frame)
+        kwargs.setdefault("tool", reading.tool)
+        kwargs.setdefault("command", reading.command)
+        kwargs.setdefault("layers", reading.layers)
+        return _receipt(**kwargs)
 
     remembered = REMEMBER.match(text)
     if remembered and store:
         kind = (remembered.group(1) or "fact").lower()
         body = remembered.group(2).strip()
         atom = store.add(body, kind=kind, personality=personality_id)
-        return _receipt(
+        return finish(
             act="say",
             route="MEMORY",
             answer=f"Kept a {atom['kind']}: {atom['text']}",
@@ -106,7 +148,7 @@ def _run_turn(text, personality_id, store, cards_path, engine: AliceDecisionEngi
     forgotten = FORGET.match(text)
     if forgotten and store:
         count = store.forget(forgotten.group(1))
-        return _receipt(
+        return finish(
             act="say",
             route="MEMORY",
             answer=f"Forgot {count} note{'s' if count != 1 else ''}.",
@@ -122,7 +164,7 @@ def _run_turn(text, personality_id, store, cards_path, engine: AliceDecisionEngi
         needle = recall.group(1) or text
         found = store.search(needle)
         if not found:
-            return _receipt(
+            return finish(
                 act="silence-gap",
                 route="ABSTAIN",
                 answer="No memory notes matched.",
@@ -132,7 +174,7 @@ def _run_turn(text, personality_id, store, cards_path, engine: AliceDecisionEngi
                 shelves=shelves,
                 next_shelf="remember a note, or ask a stack",
             )
-        return _receipt(
+        return finish(
             act="say",
             route="MEMORY",
             answer=_format_memory(found),
@@ -143,11 +185,15 @@ def _run_turn(text, personality_id, store, cards_path, engine: AliceDecisionEngi
             next_shelf="",
         )
 
+    acted = _act_on_frame(reading, text, personality_id, memory_hits, shelves, drawing_dir, workspace)
+    if acted:
+        return finish(**acted)
+
     shelves.append("compute")
     computed = _compute(text)
     if computed:
         answer, source, digest = computed
-        return _receipt(
+        return finish(
             act="say",
             route="COMPUTE",
             answer=answer,
@@ -164,7 +210,7 @@ def _run_turn(text, personality_id, store, cards_path, engine: AliceDecisionEngi
     if nav:
         answer, confidence, _meta = nav
         if confidence >= engine.theta_stack:
-            return _receipt(
+            return finish(
                 act="cite",
                 route="RETRIEVE",
                 answer=answer,
@@ -184,7 +230,7 @@ def _run_turn(text, personality_id, store, cards_path, engine: AliceDecisionEngi
             f"{card['topic']}: {card['comment']} "
             f"[Dewey {card['dewey']} · {card['title']}]{door}"
         )
-        return _receipt(
+        return finish(
             act="cite",
             route="RETRIEVE",
             answer=answer,
@@ -198,7 +244,7 @@ def _run_turn(text, personality_id, store, cards_path, engine: AliceDecisionEngi
     shelves.append("features")
     feature = search_features(text)
     if feature:
-        return _receipt(
+        return finish(
             act="cite",
             route="RETRIEVE",
             answer=feature["comment"],
@@ -209,12 +255,27 @@ def _run_turn(text, personality_id, store, cards_path, engine: AliceDecisionEngi
             next_shelf="",
         )
 
+    if "knowledge" in reading.shelves or reading.frame in {"ask", "code", "procedure"}:
+        shelves.append("knowledge")
+        known = search_knowledge(text)
+        if known:
+            return finish(
+                act="cite",
+                route="RETRIEVE",
+                answer=f"{known['topic']}: {known['comment']}",
+                source=known["card_id"],
+                personality=personality_id,
+                memory=memory_hits,
+                shelves=shelves,
+                next_shelf="",
+            )
+
     shelves.append("hand")
     hand = WhitelistedHandProxy.query_hand(text)
     if hand:
         answer, trust, meta = hand
         if trust >= engine.theta_hand:
-            return _receipt(
+            return finish(
                 act="cite",
                 route="HAND",
                 answer=answer,
@@ -225,7 +286,7 @@ def _run_turn(text, personality_id, store, cards_path, engine: AliceDecisionEngi
                 next_shelf="",
             )
 
-    return _receipt(
+    return finish(
         act="silence-gap",
         route="ABSTAIN",
         answer="No stack card, feature card, or tool covered that.",
@@ -235,6 +296,67 @@ def _run_turn(text, personality_id, store, cards_path, engine: AliceDecisionEngi
         shelves=shelves,
         next_shelf="name a stack subject, or ask for a sample",
     )
+
+
+def _act_on_frame(reading: Reading, text, personality_id, memory_hits, shelves, drawing_dir, workspace) -> Optional[dict]:
+    """Run an instrument, or cite a command. None means the shelves still have to walk."""
+    if reading.frame in {"swarm", "agent", "mcp", "serve"}:
+        shelves.append(reading.frame)
+        return {
+            "act": "cite",
+            "route": "ORCHESTRATE",
+            "answer": reading.command,
+            "source": reading.shelves[0] if reading.shelves else reading.tool,
+            "personality": personality_id,
+            "memory": memory_hits,
+            "shelves": shelves,
+            "next_shelf": "run that command yourself; Alice does not launch a paid swarm or a frontier agent",
+        }
+    if reading.frame == "browse":
+        shelves.append("browse")
+        result = browse(reading.subject)
+        return _sense_receipt(result, personality_id, memory_hits, shelves, reading.command)
+    if reading.frame == "see":
+        shelves.append("see")
+        result = see_image(Path(reading.subject))
+        return _sense_receipt(result, personality_id, memory_hits, shelves, "")
+    if reading.frame == "hear":
+        shelves.append("hear")
+        result = hear_audio(Path(reading.subject))
+        return _sense_receipt(result, personality_id, memory_hits, shelves, "")
+    if reading.frame == "draw":
+        shelves.append("draw")
+        dest_dir = drawing_dir or Path(tempfile.gettempdir()) / "alice-drawings"
+        result = write_drawing(text, dest_dir / "drawing.svg")
+        svg = result.get("svg") or ""
+        answer = result["answer"] if not svg else result["answer"] + "\n" + svg
+        return _sense_receipt(
+            {**result, "answer": answer},
+            personality_id,
+            memory_hits,
+            shelves,
+            "",
+        )
+    if reading.frame == "search":
+        shelves.append("search")
+        result = search_code(reading.subject, workspace)
+        return _sense_receipt(result, personality_id, memory_hits, shelves, reading.command)
+    return None
+
+
+def _sense_receipt(result: dict, personality_id: str, memory_hits: list, shelves: list, command: str) -> dict:
+    ok = bool(result.get("ok"))
+    return {
+        "act": result["act"],
+        "route": "SENSE" if ok else "ABSTAIN",
+        "answer": result["answer"],
+        "source": result["source"],
+        "personality": personality_id,
+        "memory": memory_hits,
+        "shelves": shelves,
+        "next_shelf": result.get("next") or "",
+        "command": command,
+    }
 
 
 def _compute(text: str):
@@ -259,12 +381,18 @@ def format_turn(turn: dict) -> str:
     lines = [
         f"act: {turn['act']}",
         f"route: {turn['route']}",
+        f"frame: {turn.get('frame') or '-'}",
         f"personality: {turn['personality']}",
         f"source: {turn['source'] or '-'}",
         f"answer: {turn['answer']}",
     ]
+    if turn.get("command"):
+        lines.append(f"command: {turn['command']}")
     if turn.get("next"):
         lines.append(f"next: {turn['next']}")
+    if turn.get("layers"):
+        lines.append("layers:")
+        lines.extend(f"  {line}" for line in turn["layers"])
     if turn.get("memory") and turn["route"] not in {"MEMORY"}:
         lines.append("memory:")
         lines.append(_format_memory(turn["memory"]))
