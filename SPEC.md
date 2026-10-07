@@ -40,7 +40,7 @@ logic stubs: `NAME(x)` 1437, `PERSON(x)` 1087, `LOCATION(x)` 560, `NOUN(x)` 289,
 
 batches: 880 completed. CheaperInference GLM 5.3 spend $5.06 across 492 calls, past the $5.00 ceiling in `build_emap_graph.py`.
 
-csr: `emap_csr.bin` payload 245163 bytes, 24240 nodes, 21169 edges.
+csr: `emap_csr.bin` payload 144097 bytes, 24240 nodes, 6731 edges, re-exported 2026-10-07. A target lemma with no sense is omitted. The 2026-10-06 export counted 21169 edges because those targets were stored as index 0, the lemma ζ.
 
 running router: `alice_decision_engine.py`. COMPUTE covers rational arithmetic, a closed SI unit table, and proleptic Gregorian dates. RETRIEVE covers three regular expressions over a single alphabetic token. HAND covers three stored strings. ABSTAIN is the miss.
 
