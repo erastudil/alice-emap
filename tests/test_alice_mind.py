@@ -42,6 +42,11 @@ def test_private_browse_abstains():
     assert "Private" in turn["answer"]
     assert public_https("http://10.1.2.3/") is None
     assert public_https("http://192.168.0.5/a") is None
+    assert public_https("http://[::1]/secret") is None
+    assert public_https("http://127.1/") is None
+    assert public_https("http://2130706433/") is None
+    assert public_https("http://100.64.0.1/") is None
+    assert public_https("http://8.8.8.8/") == "http://8.8.8.8/"
     assert public_https("https://example.com/docs") == "https://example.com/docs"
 
 
