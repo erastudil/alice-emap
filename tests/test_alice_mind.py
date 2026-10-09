@@ -1,8 +1,11 @@
 """Deeper reading: orchestration stays cited, instruments run, knowledge is a shelf."""
 
+import shutil
 import struct
 import sys
+import threading
 import wave
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import pytest
@@ -12,7 +15,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from alice_interpret import interpret
-from alice_senses import public_https
+from alice_senses import _browse_chrome, _navigation_result, _serve_fetch, public_https
 from alice_session import run_turn
 
 
@@ -48,6 +51,84 @@ def test_private_browse_abstains():
     assert public_https("http://100.64.0.1/") is None
     assert public_https("http://8.8.8.8/") == "http://8.8.8.8/"
     assert public_https("https://example.com/docs") == "https://example.com/docs"
+
+
+def test_redirect_to_loopback_is_not_read():
+    state = {}
+    assert _serve_fetch("http://public.example/go", "Document", "main", state) == "continue"
+    for url in ("http://127.0.0.1/secret", "http://127.1/", "http://[::1]/secret", "http://2130706433/"):
+        assert _serve_fetch(url, "Document", "main", state) == "abort"
+    assert _navigation_result(state) == "silence"
+
+
+def test_private_subresource_does_not_hide_a_public_page():
+    state = {}
+    assert _serve_fetch("https://example.com/", "Document", "main", state) == "continue"
+    assert _serve_fetch("http://10.1.2.3/pixel.gif", "Image", "child", state) == "abort"
+    assert _serve_fetch("http://127.0.0.1/", "Document", "child", state) == "abort"
+    assert _navigation_result(state) == "read"
+
+
+def _chrome_bin() -> str:
+    return (
+        shutil.which("google-chrome")
+        or shutil.which("google-chrome-stable")
+        or shutil.which("chromium")
+        or shutil.which("chromium-browser")
+        or ""
+    )
+
+
+def _page_server():
+    body = b"<html><head><title>Public Page</title></head><body>hello alice</body></html>"
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path.startswith("/go"):
+                port = self.server.server_address[1]
+                self.send_response(302)
+                self.send_header("Location", f"http://127.0.0.1:{port}/secret")
+                self.end_headers()
+                return
+            payload = b"<html><title>secret</title><body>PRIVATE-BODY-TOKEN</body></html>"
+            if self.path.startswith("/page"):
+                payload = body
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+        def log_message(self, fmt, *args):
+            return
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server
+
+
+def test_chrome_reads_a_public_page_and_drops_a_private_redirect():
+    chrome = _chrome_bin()
+    if not chrome:
+        pytest.skip("chrome is not installed")
+    server = _page_server()
+    port = server.server_address[1]
+    rules = ["--host-resolver-rules=MAP public.example 127.0.0.1"]
+    try:
+        page = _browse_chrome(chrome, f"http://public.example:{port}/page", 20, rules)
+        secret = _browse_chrome(chrome, f"http://public.example:{port}/go", 20, rules)
+    finally:
+        server.shutdown()
+        server.server_close()
+    assert page["ok"] is True
+    assert page["act"] == "say"
+    assert "Public Page" in page["answer"]
+    assert "hello alice" in page["answer"]
+    assert secret["ok"] is False
+    assert secret["act"] == "silence-gap"
+    assert "left the public web" in secret["answer"]
+    assert "PRIVATE-BODY-TOKEN" not in secret["answer"]
 
 
 def test_public_browse_command_is_playwright():
