@@ -5,11 +5,14 @@ Each one reports what it read. A missing model stays a named gap.
 
 from __future__ import annotations
 
+import base64
 import ipaddress
+import json
 import os
 import re
 import shutil
 import signal
+import socket
 import struct
 import subprocess
 import tempfile
@@ -17,6 +20,7 @@ import time
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
+from urllib.request import urlopen
 
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 AUDIO_EXT = {".wav", ".mp3", ".ogg", ".flac", ".m4a"}
@@ -157,13 +161,7 @@ def _browse_playwright(url: str, timeout: int) -> dict:
             page.route("**/*", _allow)
             page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
             if not public_https(page.url):
-                return {
-                    "ok": False,
-                    "act": "silence-gap",
-                    "source": "tool:playwright",
-                    "answer": "The page left the public web. The body was not read.",
-                    "next": "give a public https URL that stays public",
-                }
+                return _left_public_web("tool:playwright")
             title = page.title()
             text = page.inner_text("body")[:1500]
         finally:
@@ -189,34 +187,318 @@ def _kill_process_group(proc: subprocess.Popen) -> None:
         proc.kill()
 
 
-def _read_dom(proc: subprocess.Popen, timeout: int) -> str:
-    """Chrome dump-dom prints the page and then often refuses to exit. Read until </html>."""
-    assert proc.stdout is not None
-    fd = proc.stdout.fileno()
-    os.set_blocking(fd, False)
-    chunks: list[bytes] = []
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        try:
-            piece = os.read(fd, 65536)
-        except BlockingIOError:
-            piece = b""
-        if piece:
-            chunks.append(piece)
-            if b"</html>" in b"".join(chunks).lower():
-                break
-        elif proc.poll() is not None:
-            break
+def _serve_fetch(url: str, resource_type: str, frame_id: str, state: dict) -> str:
+    """Continue a public request. Abort the rest. A main-frame abort is not read."""
+    action = "continue" if public_https(url) else "abort"
+    if resource_type == "Document":
+        main = state.get("main_frame")
+        if main is None:
+            state["main_frame"] = frame_id
+            main = frame_id
+        if frame_id == main:
+            if action == "abort":
+                state["document_blocked"] = True
+            else:
+                state["document_url"] = url
+    return action
+
+
+def _navigation_result(state: dict) -> str:
+    if state.get("document_blocked"):
+        return "silence"
+    if not public_https(state.get("document_url") or ""):
+        return "silence"
+    return "read"
+
+
+def _left_public_web(source: str) -> dict:
+    return {
+        "ok": False,
+        "act": "silence-gap",
+        "source": source,
+        "answer": "The page left the public web. The body was not read.",
+        "next": "give a public https URL that stays public",
+    }
+
+
+def _chrome_miss() -> dict:
+    return {
+        "ok": False,
+        "act": "silence-instrument",
+        "source": "tool:chrome",
+        "answer": "The browser did not return a page.",
+        "next": "retry the public URL, or install Playwright",
+    }
+
+
+class _Cdp:
+    """Small Chrome DevTools client. Enough to pause a request and read the DOM."""
+
+    def __init__(self, sock: socket.socket, leftover: bytes = b""):
+        self.sock = sock
+        self.buf = leftover
+        self.next_id = 0
+
+    def send(self, method: str, params: Optional[dict] = None) -> int:
+        self.next_id += 1
+        msg = {"id": self.next_id, "method": method}
+        if params is not None:
+            msg["params"] = params
+        self._send_frame(0x1, json.dumps(msg).encode())
+        return self.next_id
+
+    def _send_frame(self, opcode: int, payload: bytes) -> None:
+        length = len(payload)
+        header = bytearray([0x80 | opcode])
+        if length < 126:
+            header.append(0x80 | length)
+        elif length < 65536:
+            header.append(0x80 | 126)
+            header.extend(struct.pack(">H", length))
         else:
-            time.sleep(0.1)
-    _kill_process_group(proc)
-    return b"".join(chunks).decode("utf-8", "replace")
+            header.append(0x80 | 127)
+            header.extend(struct.pack(">Q", length))
+        mask = os.urandom(4)
+        header.extend(mask)
+        masked = bytes(byte ^ mask[index % 4] for index, byte in enumerate(payload))
+        self.sock.sendall(bytes(header) + masked)
+
+    def recv_json(self, deadline: float) -> Optional[dict]:
+        parts: list[bytes] = []
+        while True:
+            frame = self._recv_frame(deadline)
+            if frame is None:
+                return None
+            fin, opcode, payload = frame
+            if opcode == 0x9:
+                self._send_frame(0xA, payload)
+                continue
+            if opcode == 0x8:
+                return None
+            if opcode == 0x1:
+                parts = [payload]
+            elif opcode == 0x0 and parts:
+                parts.append(payload)
+            else:
+                continue
+            if fin:
+                return json.loads(b"".join(parts).decode("utf-8"))
+
+    def _recv_exact(self, size: int, deadline: float) -> Optional[bytes]:
+        if size == 0:
+            return b""
+        while len(self.buf) < size:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return None
+            self.sock.settimeout(remaining)
+            try:
+                chunk = self.sock.recv(max(4096, size - len(self.buf)))
+            except (TimeoutError, socket.timeout):
+                return None
+            if not chunk:
+                return None
+            self.buf += chunk
+        data = self.buf[:size]
+        self.buf = self.buf[size:]
+        return data
+
+    def _recv_frame(self, deadline: float):
+        header = self._recv_exact(2, deadline)
+        if header is None:
+            return None
+        fin = bool(header[0] & 0x80)
+        opcode = header[0] & 0x0F
+        masked = bool(header[1] & 0x80)
+        length = header[1] & 0x7F
+        if length == 126:
+            raw = self._recv_exact(2, deadline)
+            if raw is None:
+                return None
+            length = struct.unpack(">H", raw)[0]
+        elif length == 127:
+            raw = self._recv_exact(8, deadline)
+            if raw is None:
+                return None
+            length = struct.unpack(">Q", raw)[0]
+        mask = b""
+        if masked:
+            mask = self._recv_exact(4, deadline) or b""
+            if len(mask) != 4:
+                return None
+        payload = self._recv_exact(length, deadline)
+        if payload is None:
+            return None
+        if masked:
+            payload = bytes(byte ^ mask[index % 4] for index, byte in enumerate(payload))
+        return fin, opcode, payload
 
 
-def _browse_chrome(chrome: str, url: str, timeout: int) -> dict:
+def _ws_connect(port: int, path: str, timeout: float) -> tuple[socket.socket, bytes]:
+    sock = socket.create_connection(("127.0.0.1", port), timeout=timeout)
+    try:
+        key = base64.b64encode(os.urandom(16)).decode()
+        request = (
+            f"GET {path} HTTP/1.1\r\n"
+            f"Host: 127.0.0.1:{port}\r\n"
+            "Upgrade: websocket\r\n"
+            "Connection: Upgrade\r\n"
+            f"Sec-WebSocket-Key: {key}\r\n"
+            "Sec-WebSocket-Version: 13\r\n"
+            "\r\n"
+        )
+        sock.sendall(request.encode())
+        data = b""
+        deadline = time.monotonic() + timeout
+        sock.settimeout(timeout)
+        while b"\r\n\r\n" not in data:
+            if time.monotonic() > deadline:
+                raise TimeoutError("cdp handshake timed out")
+            piece = sock.recv(4096)
+            if not piece:
+                raise ConnectionError("cdp handshake closed")
+            data += piece
+        header, rest = data.split(b"\r\n\r\n", 1)
+        status = header.split(b"\r\n", 1)[0]
+        if b" 101 " not in status:
+            raise ConnectionError(status.decode("utf-8", "replace"))
+        return sock, rest
+    except Exception:
+        sock.close()
+        raise
+
+
+def _page_socket_path(port: int) -> str:
+    with urlopen(f"http://127.0.0.1:{port}/json/list", timeout=5) as resp:
+        targets = json.loads(resp.read().decode("utf-8"))
+    for target in targets:
+        if target.get("type") == "page" and target.get("webSocketDebuggerUrl"):
+            return urlparse(target["webSocketDebuggerUrl"]).path
+    raise ConnectionError("no page target")
+
+
+def _devtools_port(profile: Path, proc: subprocess.Popen, timeout: int) -> Optional[int]:
+    deadline = time.monotonic() + min(timeout, 10)
+    port_file = profile / "DevToolsActivePort"
+    while time.monotonic() < deadline:
+        if port_file.is_file():
+            lines = port_file.read_text(encoding="utf-8").splitlines()
+            if lines and lines[0].isdigit():
+                return int(lines[0])
+        if proc.poll() is not None:
+            return None
+        time.sleep(0.05)
+    return None
+
+
+def _answer_fetch(cdp: _Cdp, params: dict, state: dict) -> Optional[str]:
+    request = params.get("request") or {}
+    action = _serve_fetch(
+        request.get("url") or "",
+        params.get("resourceType") or "",
+        params.get("frameId") or "",
+        state,
+    )
+    if action == "continue":
+        cdp.send("Fetch.continueRequest", {"requestId": params["requestId"]})
+    else:
+        cdp.send(
+            "Fetch.failRequest",
+            {"requestId": params["requestId"], "errorReason": "Aborted"},
+        )
+    if state.get("document_blocked"):
+        return "silence"
+    return None
+
+
+def _evaluate_html(cdp: _Cdp, state: dict, deadline: float) -> str:
+    call_id = cdp.send(
+        "Runtime.evaluate",
+        {
+            "expression": (
+                "document.documentElement ? "
+                "document.documentElement.outerHTML.slice(0, 200000) : ''"
+            ),
+            "returnByValue": True,
+        },
+    )
+    while True:
+        msg = cdp.recv_json(deadline)
+        if msg is None:
+            return ""
+        if msg.get("method") == "Fetch.requestPaused":
+            if _answer_fetch(cdp, msg["params"], state) == "silence":
+                return ""
+            continue
+        if msg.get("method") == "Fetch.authRequired":
+            cdp.send(
+                "Fetch.failRequest",
+                {"requestId": msg["params"]["requestId"], "errorReason": "Aborted"},
+            )
+            continue
+        if msg.get("id") == call_id:
+            return ((msg.get("result") or {}).get("result") or {}).get("value") or ""
+
+
+def _cdp_public_html(port: int, url: str, timeout: int) -> tuple[str, str]:
+    sock, leftover = _ws_connect(port, _page_socket_path(port), timeout)
+    try:
+        cdp = _Cdp(sock, leftover)
+        deadline = time.monotonic() + timeout
+        pending = {
+            cdp.send("Fetch.enable", {"patterns": [{"urlPattern": "*"}]}),
+            cdp.send("Page.enable"),
+        }
+        while pending:
+            msg = cdp.recv_json(deadline)
+            if msg is None:
+                return "fail", ""
+            if msg.get("id") in pending:
+                if msg.get("error"):
+                    return "fail", ""
+                pending.discard(msg["id"])
+        cdp.send("Page.navigate", {"url": url})
+        state: dict = {}
+        while time.monotonic() < deadline:
+            msg = cdp.recv_json(deadline)
+            if msg is None:
+                break
+            method = msg.get("method")
+            if method == "Fetch.requestPaused":
+                if _answer_fetch(cdp, msg["params"], state) == "silence":
+                    return "silence", ""
+                continue
+            if method == "Fetch.authRequired":
+                cdp.send(
+                    "Fetch.failRequest",
+                    {"requestId": msg["params"]["requestId"], "errorReason": "Aborted"},
+                )
+                continue
+            if method in {"Page.domContentEventFired", "Page.loadEventFired"} and state.get("document_url"):
+                if _navigation_result(state) != "read":
+                    return "silence", ""
+                html = _evaluate_html(cdp, state, deadline)
+                if _navigation_result(state) != "read":
+                    return "silence", ""
+                return "read", html
+        if state.get("document_blocked"):
+            return "silence", ""
+        return "fail", ""
+    finally:
+        sock.close()
+
+
+def _browse_chrome(
+    chrome: str,
+    url: str,
+    timeout: int,
+    launch_args: Optional[list[str]] = None,
+) -> dict:
+    """Open a page in system Chrome. Abort any request that is not public, including a redirect."""
     profile = Path(tempfile.mkdtemp(prefix="alice-chrome-"))
-    proc = subprocess.Popen(
-        [
+    proc = None
+    try:
+        command = [
             chrome,
             "--headless=new",
             "--disable-gpu",
@@ -225,30 +507,40 @@ def _browse_chrome(chrome: str, url: str, timeout: int) -> dict:
             "--no-first-run",
             "--no-default-browser-check",
             f"--user-data-dir={profile}",
-            "--dump-dom",
-            url,
-        ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    )
-    stdout = _read_dom(proc, timeout)
-    if "<html" not in stdout.lower():
+            "--remote-debugging-port=0",
+            "--remote-debugging-address=127.0.0.1",
+            "--remote-allow-origins=*",
+            *(launch_args or []),
+            "about:blank",
+        ]
+        proc = subprocess.Popen(
+            command,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        port = _devtools_port(profile, proc, timeout)
+        if port is None:
+            return _chrome_miss()
+        status, html = _cdp_public_html(port, url, timeout)
+        if status == "silence":
+            return _left_public_web("tool:chrome")
+        if status != "read" or "<html" not in html.lower():
+            return _chrome_miss()
+        title, text = _strip_html(html)
         return {
-            "ok": False,
-            "act": "silence-instrument",
+            "ok": True,
+            "act": "say",
             "source": "tool:chrome",
-            "answer": "The browser did not return a page.",
-            "next": "retry the public URL, or install Playwright",
+            "answer": f"Page: {title or url}\n{text}",
+            "next": "",
         }
-    title, text = _strip_html(stdout)
-    return {
-        "ok": True,
-        "act": "say",
-        "source": "tool:chrome",
-        "answer": f"Page: {title or url}\n{text}",
-        "next": "",
-    }
+    except (OSError, json.JSONDecodeError, TimeoutError, ValueError):
+        return _chrome_miss()
+    finally:
+        if proc is not None and proc.poll() is None:
+            _kill_process_group(proc)
+        shutil.rmtree(profile, ignore_errors=True)
 
 
 def image_header(path: Path) -> Optional[dict]:
