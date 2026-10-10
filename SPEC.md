@@ -30,7 +30,7 @@ sense nodes: 24240 rows in `nodes`. 19760 inventory lemmas have no sense.
 
 kernel flag: 120 lemmas marked `is_kernel = 1`.
 
-edges: 21195 rows in `edges`. Every row has `target_id` NULL. 14457 targets have no sense node. 1353 edges point a lemma at itself.
+edges: 21195 rows in `edges`. As of 2026-10-10, 6738 rows have `target_id` set to the sense with the same lemma (the lowest node id when a lemma has two senses). 14457 targets have no sense node and stay NULL. 1353 edges point a lemma at itself. Of the resolved rows, 5390 have distinct endpoints and are walkable. The other 1348 are self-loops.
 
 relation mix: hypernym 5480, synonym 3583, entails 3263, instance_of 1766, antonym 1028, derivation 994, and the remaining closed names down to bridge_analogy 27. All 24 canonical names occur.
 
