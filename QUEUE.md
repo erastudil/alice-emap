@@ -18,7 +18,7 @@ One row is one admission. Status is `landed`, `open`, or `blocked`. Owner `local
 | Q0.3 | W0 | Write this queue | local | landed | every later row has an owner and an exit |
 | Q0.4 | W0 | Draft Hydra repair prompts | local | landed | `prompts/hydra/` system, sense, edge, audit, run |
 | Q1.1 | W1 | Add `tools/graph_gate.py` | local | landed | prints nodes, walkable edges, quarantine, stub T1, dewey `813.54` |
-| Q1.2 | W1 | Resolve `target_id` by lemma join | local | open | walkable rows have both ids set |
+| Q1.2 | W1 | Resolve `target_id` by lemma join | local | landed | walkable rows have both ids set |
 | Q1.3 | W1 | Create `edges_quarantine` and move self-loops plus dangling targets | local | open | walkable set has zero self-loops and zero dangling targets |
 | Q1.4 | W1 | Export CSR from the walkable set only | local | open | `emap_csr.json` edge_count equals the walkable count |
 | Q1.5 | W1 | Keep the lattice tests green after the move | local | open | `python -m pytest -v tests/test_alice_decision_model.py` exits 0 |

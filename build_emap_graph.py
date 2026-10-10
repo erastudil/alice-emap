@@ -17,7 +17,6 @@ import os
 import re
 import sqlite3
 import struct
-import sys
 import threading
 import time
 import urllib.error
@@ -28,18 +27,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent
-HYDRA_PATH = ROOT.parent / "hydra"
-if str(HYDRA_PATH) not in sys.path:
-    sys.path.insert(0, str(HYDRA_PATH))
-
-from hydra_cli.config import load_dotenv
-load_dotenv()
-
-from hydra_cli.providers import (
-    get_free_provider,
-    stream_chat_completion,
-    ProviderError,
-)
 
 CANONICAL_RELATIONS: Set[str] = {
     "hypernym", "hyponym", "instance_of", "has_instance",
@@ -165,6 +152,32 @@ def get_db(db_path: Path = ROOT / "emap.db") -> sqlite3.Connection:
     conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_target ON edges (target_lemma)")
     conn.commit()
     return conn
+
+
+def resolve_target_ids(db: sqlite3.Connection) -> int:
+    """Set target_id by joining target_lemma to a sense node.
+
+    A lemma with more than one sense takes the lowest node id.
+    A target with no sense stays NULL. The update is idempotent.
+    """
+    with DB_LOCK:
+        cur = db.cursor()
+        cur.execute("""
+            UPDATE edges
+            SET target_id = (
+                SELECT MIN(n.id) FROM nodes n WHERE n.lemma = edges.target_lemma
+            )
+            WHERE EXISTS (
+                SELECT 1 FROM nodes n WHERE n.lemma = edges.target_lemma
+            )
+            AND target_id IS NOT (
+                SELECT MIN(n.id) FROM nodes n WHERE n.lemma = edges.target_lemma
+            )
+        """)
+        changed = cur.rowcount
+        db.commit()
+        db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        return changed
 
 
 def get_cumulative_cheaperinference_spend(db: sqlite3.Connection) -> float:
@@ -506,6 +519,7 @@ def process_batch(db: sqlite3.Connection, batch_id: int, start_idx: int, end_idx
         """, (actual_model, nodes_inserted, edges_inserted, now_iso, batch_id))
         db.commit()
 
+    resolve_target_ids(db)
     return nodes_inserted, edges_inserted
 
 
@@ -520,6 +534,7 @@ def reconcile_failed_batches(db: sqlite3.Connection, pool: str = "auto", workers
 
     if not failed_rows:
         print("[RECONCILIATION] No failed batches found.")
+        resolve_target_ids(db)
         return 0, 0, 0
 
     print(f"[RECONCILIATION] Reconciling {len(failed_rows)} failed batches with {workers} workers...")
@@ -553,6 +568,7 @@ def reconcile_failed_batches(db: sqlite3.Connection, pool: str = "auto", workers
                 print(f"[RECONCILE FAIL] Batch {b_id} still failed: {err}")
 
     t_elapsed = time.time() - t_start
+    resolve_target_ids(db)
     print(f"[RECONCILIATION] Completed in {t_elapsed:.1f}s: {recovered_batches}/{len(failed_rows)} recovered (+{total_nodes} nodes, +{total_edges} edges)")
     return recovered_batches, total_nodes, total_edges
 
@@ -600,6 +616,7 @@ def run_batch_range(db: sqlite3.Connection, start_batch: int, max_batches: int, 
                 print(f"[ERROR] batch {b_idx} failed: {exc}")
 
     t_elapsed = time.time() - t_start
+    resolve_target_ids(db)
     print(f"[BATCH RANGE] Finished {successful}/{len(pending)} pending batches in {t_elapsed:.1f}s (+{total_nodes} nodes, +{total_edges} edges)")
     return successful, total_nodes, total_edges
 
@@ -658,7 +675,8 @@ def verify_graph(db: sqlite3.Connection) -> Dict[str, Any]:
 
 
 def export_csr(db: sqlite3.Connection, out_bin: Path = ROOT / "emap_csr.bin", out_meta: Path = ROOT / "emap_csr.json") -> int:
-    """Export SQLite graph to CSR binary representation conforming to emap/SPEC.md."""
+    """Resolve target ids, then export the CSR binary named in emap/SPEC.md."""
+    resolve_target_ids(db)
     with DB_LOCK:
         cursor = db.cursor()
         cursor.execute("SELECT lemma, id FROM nodes ORDER BY id")
