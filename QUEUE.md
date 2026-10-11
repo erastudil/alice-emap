@@ -19,9 +19,9 @@ One row is one admission. Status is `landed`, `open`, or `blocked`. Owner `local
 | Q0.4 | W0 | Draft Hydra repair prompts | local | landed | `prompts/hydra/` system, sense, edge, audit, run |
 | Q1.1 | W1 | Add `tools/graph_gate.py` | local | landed | prints nodes, walkable edges, quarantine, stub T1, dewey `813.54` |
 | Q1.2 | W1 | Resolve `target_id` by lemma join | local | open | walkable rows have both ids set |
-| Q1.3 | W1 | Create `edges_quarantine` and move self-loops plus dangling targets | local | open | walkable set has zero self-loops and zero dangling targets |
+| Q1.3 | W1 | Create `edges_quarantine` and move self-loops plus dangling targets | local | landed | walkable set has zero self-loops and zero dangling targets |
 | Q1.4 | W1 | Export CSR from the walkable set only | local | open | `emap_csr.json` edge_count equals the walkable count |
-| Q1.5 | W1 | Keep the lattice tests green after the move | local | open | `python -m pytest -v tests/test_alice_decision_model.py` exits 0 |
+| Q1.5 | W1 | Keep the lattice tests green after the move | local | landed | `python -m pytest -v tests/test_alice_decision_model.py` exits 0 |
 | Q2.1 | W2 | Select repair candidates: stub T1 or dewey `813.54` or gloss under eight words | local | landed | JSONL of candidate rows, one object per line |
 | Q2.2 | W2 | Slice candidates into batches of 10 | local | landed | batch files under `prompts/hydra/batches/` |
 | Q2.3 | W2 | Run sense repair on each batch | hydra-free | landed | raw JSON saved beside the batch, paid GLM untouched |

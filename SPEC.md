@@ -30,9 +30,9 @@ sense nodes: 24240 rows in `nodes`. 19760 inventory lemmas have no sense.
 
 kernel flag: 120 lemmas marked `is_kernel = 1`.
 
-edges: 21195 rows in `edges`. Every row has `target_id` NULL. 14457 targets have no sense node. 1353 edges point a lemma at itself.
+edges: 21195 rows measured on 2026-10-06, every `target_id` NULL, 14457 targets with no sense, 1353 self-loops. On 2026-10-11 those defects sit in `edges_quarantine`: 1353 `self_loop` (5 of them also have no sense) and 14452 `dangling`. `edges` holds the other 5390 rows. Each remaining target lemma has a sense. `target_id` on those rows is still NULL.
 
-relation mix: hypernym 5480, synonym 3583, entails 3263, instance_of 1766, antonym 1028, derivation 994, and the remaining closed names down to bridge_analogy 27. All 24 canonical names occur.
+relation mix across `edges` and `edges_quarantine`: hypernym 5480, synonym 3583, entails 3263, instance_of 1766, antonym 1028, derivation 994, and the remaining closed names down to bridge_analogy 27. All 24 canonical names occur.
 
 dewey outlier: code `813.54` sits on 2158 nodes, the largest shelf in the table.
 
@@ -40,7 +40,7 @@ logic stubs: `NAME(x)` 1437, `PERSON(x)` 1087, `LOCATION(x)` 560, `NOUN(x)` 289,
 
 batches: 880 completed. CheaperInference GLM 5.3 spend $5.06 across 492 calls, past the $5.00 ceiling in `build_emap_graph.py`.
 
-csr: `emap_csr.bin` payload 245163 bytes, 24240 nodes, 21169 edges.
+csr: `emap_csr.bin` payload 134661 bytes, 24240 nodes, 5383 edges, exported 2026-10-11 from `edges` after quarantine. Seven kept edges have a source lemma with no sense and are absent from the binary.
 
 running router: `alice_decision_engine.py`. COMPUTE covers rational arithmetic, a closed SI unit table, and proleptic Gregorian dates. RETRIEVE covers three regular expressions over a single alphabetic token. HAND covers three stored strings. ABSTAIN is the miss.
 
