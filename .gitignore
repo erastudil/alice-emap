@@ -1,7 +1,13 @@
-﻿__pycache__/
+__pycache__/
 *.py[cod]
 *.class
 .pytest_cache/
+.pytest_tmp/
 .DS_Store
 Thumbs.db
 *.log
+*.db-shm
+*.db-wal
+syllogistic_map.db*
+syllogisms.jsonl
+
