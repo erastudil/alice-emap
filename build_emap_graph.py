@@ -17,7 +17,6 @@ import os
 import re
 import sqlite3
 import struct
-import sys
 import threading
 import time
 import urllib.error
@@ -28,18 +27,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent
-HYDRA_PATH = ROOT.parent / "hydra"
-if str(HYDRA_PATH) not in sys.path:
-    sys.path.insert(0, str(HYDRA_PATH))
-
-from hydra_cli.config import load_dotenv
-load_dotenv()
-
-from hydra_cli.providers import (
-    get_free_provider,
-    stream_chat_completion,
-    ProviderError,
-)
 
 CANONICAL_RELATIONS: Set[str] = {
     "hypernym", "hyponym", "instance_of", "has_instance",
@@ -676,12 +663,14 @@ def export_csr(db: sqlite3.Connection, out_bin: Path = ROOT / "emap_csr.bin", ou
 
     actual_edge_count = 0
     for s_lem, t_lem, rel, w in edge_rows:
-        if s_lem in node_to_idx:
-            s_idx = node_to_idx[s_lem]
-            t_idx = node_to_idx.get(t_lem, 0)
-            rel_code = RELATION_MAP.get(rel, 0)
-            adj[s_idx].append((t_idx, float(w), rel_code))
-            actual_edge_count += 1
+        s_idx = node_to_idx.get(s_lem)
+        t_idx = node_to_idx.get(t_lem)
+        # Index 0 is a real node (lemma ζ). A missing target must not land there.
+        if s_idx is None or t_idx is None:
+            continue
+        rel_code = RELATION_MAP.get(rel, 0)
+        adj[s_idx].append((t_idx, float(w), rel_code))
+        actual_edge_count += 1
 
     indptr: List[int] = [0]
     indices: List[int] = []
