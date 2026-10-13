@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from alice_interpret import interpret
-from alice_senses import public_https
+from alice_senses import image_header, public_https
 from alice_session import run_turn
 
 
@@ -73,6 +73,34 @@ def test_draw_writes_a_red_circle(tmp_path: Path):
     assert "#c0392b" in turn["answer"]
     written = (tmp_path / "drawing.svg").read_text(encoding="utf-8")
     assert "<circle" in written
+
+
+def _webp_riff(chunk: bytes, payload: bytes) -> bytes:
+    body = b"WEBP" + chunk + struct.pack("<I", len(payload)) + payload
+    return b"RIFF" + struct.pack("<I", len(body)) + body
+
+
+def test_see_reads_a_webp_header(tmp_path: Path):
+    image = tmp_path / "dot.webp"
+    # VP8X stores canvas width and height minus one.
+    image.write_bytes(_webp_riff(b"VP8X", bytes(4) + (1).to_bytes(3, "little") + (2).to_bytes(3, "little")))
+    turn = run_turn(f"look at {image}")
+    assert turn["route"] == "SENSE"
+    assert "webp 2x3" in turn["answer"]
+
+    vp8 = b"\x00\x00\x00" + b"\x9d\x01\x2a" + struct.pack("<HH", 4, 5)
+    (tmp_path / "loss.webp").write_bytes(_webp_riff(b"VP8 ", vp8))
+    assert image_header(tmp_path / "loss.webp") == {"format": "webp", "width": 4, "height": 5}
+
+    bits = 5 | (6 << 14)
+    vp8l = b"\x2f" + bits.to_bytes(4, "little")
+    (tmp_path / "lossless.webp").write_bytes(_webp_riff(b"VP8L", vp8l))
+    assert image_header(tmp_path / "lossless.webp") == {"format": "webp", "width": 6, "height": 7}
+
+    (tmp_path / "named.webp").write_bytes(b"not a picture")
+    missed = run_turn(f"look at {tmp_path / 'named.webp'}")
+    assert missed["route"] == "ABSTAIN"
+    assert "webp" in missed["answer"]
 
 
 def test_see_reads_a_png_header(tmp_path: Path):
