@@ -35,14 +35,35 @@ COLORS = {
 }
 
 
-def _inet_aton(name: str):
-    """Browser-style IPv4: 127.1, 2130706433, and dotted quads. Leading zeros are refused by the caller."""
-    parts = name.split(".")
-    if not parts or any(not part.isdigit() for part in parts):
+def _ipv4_component(part: str):
+    """One browser IPv4 piece: decimal, or hex with a 0x prefix. Leading-zero octal is ambiguous."""
+    if not part:
         return None
-    if any(len(part) > 1 and part.startswith("0") for part in parts):
+    if part.startswith("0x"):
+        digits = part[2:]
+        if not digits or any(char not in "0123456789abcdef" for char in digits):
+            return None
+        return int(digits, 16)
+    if not part.isdigit():
+        return None
+    if len(part) > 1 and part.startswith("0"):
         return "ambiguous"
-    nums = [int(part) for part in parts]
+    return int(part, 10)
+
+
+def _inet_aton(name: str):
+    """Browser-style IPv4: 0x7f000001, 127.1, 2130706433, and dotted quads."""
+    parts = name.split(".")
+    if not parts:
+        return None
+    nums = []
+    for part in parts:
+        parsed = _ipv4_component(part)
+        if parsed is None:
+            return None
+        if parsed == "ambiguous":
+            return "ambiguous"
+        nums.append(parsed)
     if len(nums) == 1:
         value = nums[0]
     elif len(nums) == 2 and nums[1] <= 0xFFFFFF:
