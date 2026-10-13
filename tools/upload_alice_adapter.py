@@ -37,7 +37,7 @@ for fname in ["emap_csr.bin", "emap_csr.json", "SPEC.md"]:
     if src.exists():
         shutil.copy2(src, dst)
 
-readme_content = """---
+readme_content = r"""---
 base_model: Qwen/Qwen2.5-3B-Instruct
 library_name: peft
 pipeline_tag: text-generation
@@ -64,7 +64,7 @@ The Alice EMap architecture bridges high-dimensional language representations wi
 - **Base Model**: Qwen/Qwen2.5-3B-Instruct
 - **Adapter Rank**: r = 16, alpha = 32, dropout 0.05
 - **Target Projections**: q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj
-- **Topology Inclusion**: Bundled with emap_csr.bin (Compressed Sparse Row binary topology of 44,000 lemmas and 75,000 senses) and emap_csr.json
+- **Topology Inclusion**: Bundled with emap_csr.bin (44,000 lemmas, 24,240 sense nodes, 21,169 CSR edges) and emap_csr.json
 - **Specification**: Complete mathematical formulation in SPEC.md
 - **GitHub Repository**: [erastudil/alice-emap](https://github.com/erastudil/alice-emap)
 
@@ -72,21 +72,21 @@ The Alice EMap architecture bridges high-dimensional language representations wi
 
 In EasyLM (https://github.com/erastudil/easylm), this adapter can be loaded client-side directly into WebGPU shaders via lora_loader.ts:
 
-`	ypescript
+```typescript
 import { parseSafeTensorsHeader, applyLoRAWeights } from './services/lora_loader';
 
 // Download adapter_model.safetensors from Hugging Face
 const buffer = await fetch('https://huggingface.co/Bluebarrels/alice-emap-adapter/resolve/main/adapter_model.safetensors').then(r => r.arrayBuffer());
 const { header, offset } = parseSafeTensorsHeader(buffer);
-`
+```
 
 ## Usage in Hydra CLI
 
 Summon models or route tasks through Hydra with Hugging Face integration:
 
-`ash
+```bash
 hydra hf "Analyze the hypernym distance on Alice emap graph"
-`
+```
 
 ## Verification
 
