@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Alice 1.0 EMap — active contract"
 version: "1.1.0"
 status: canon
@@ -30,9 +30,9 @@ sense nodes: 24240 rows in `nodes`. 19760 inventory lemmas have no sense.
 
 kernel flag: 120 lemmas marked `is_kernel = 1`.
 
-edges: 21195 rows in `edges`. As of 2026-10-10, 6738 rows have `target_id` set to the sense with the same lemma (the lowest node id when a lemma has two senses). 14457 targets have no sense node and stay NULL. 1353 edges point a lemma at itself. Of the resolved rows, 5390 have distinct endpoints and are walkable. The other 1348 are self-loops.
+edges: 21195 rows measured on 2026-10-06, every `target_id` NULL, 14457 targets with no sense, 1353 self-loops. On 2026-10-11 those defects sit in `edges_quarantine`: 1353 `self_loop` (5 of them also have no sense) and 14452 `dangling`. `edges` holds the other 5390 walkable rows, each with `target_id` set to the sense with the same lemma (the lowest node id when a lemma has two senses).
 
-relation mix: hypernym 5480, synonym 3583, entails 3263, instance_of 1766, antonym 1028, derivation 994, and the remaining closed names down to bridge_analogy 27. All 24 canonical names occur.
+relation mix across `edges` and `edges_quarantine`: hypernym 5480, synonym 3583, entails 3263, instance_of 1766, antonym 1028, derivation 994, and the remaining closed names down to bridge_analogy 27. All 24 canonical names occur.
 
 dewey outlier: code `813.54` sits on 2158 nodes, the largest shelf in the table.
 
@@ -40,7 +40,7 @@ logic stubs: `NAME(x)` 1437, `PERSON(x)` 1087, `LOCATION(x)` 560, `NOUN(x)` 289,
 
 batches: 880 completed. CheaperInference GLM 5.3 spend $5.06 across 492 calls, past the $5.00 ceiling in `build_emap_graph.py`.
 
-csr: `emap_csr.bin` payload 144097 bytes, 24240 nodes, 6731 edges, re-exported 2026-10-07. A target lemma with no sense is omitted. The 2026-10-06 export counted 21169 edges because those targets were stored as index 0, the lemma ζ.
+csr: `emap_csr.bin` payload 134661 bytes, 24240 nodes, 5383 edges, exported from `edges` after quarantine and `target_id` resolution. Seven kept edges have a source lemma with no sense and are absent from the binary.
 
 running router: `alice_decision_engine.py`. COMPUTE covers rational arithmetic, a closed SI unit table, and proleptic Gregorian dates. RETRIEVE covers three regular expressions over a single alphabetic token. HAND covers three stored strings. ABSTAIN is the miss.
 

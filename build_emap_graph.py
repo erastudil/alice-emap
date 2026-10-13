@@ -1,4 +1,4 @@
-﻿"""build_emap_graph.py - Alice 1.0 EMap Graph Scaling & Multi-Pool Harness.
+"""build_emap_graph.py - Alice 1.0 EMap Graph Scaling & Multi-Pool Harness.
 
 Partitions the 44,000 lemma inventory, executes wide fan-out across:
 1. CheaperInference GLM 5.3 (with strict $5.00 cumulative spend ceiling)
@@ -17,6 +17,7 @@ import os
 import re
 import sqlite3
 import struct
+import sys
 import threading
 import time
 import urllib.error
@@ -27,6 +28,40 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent
+
+
+def _ensure_edges_quarantine(conn: sqlite3.Connection) -> None:
+    """Create the quarantine table. Opening the database does not move rows."""
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS edges_quarantine (
+        source_id INTEGER NOT NULL,
+        target_id INTEGER,
+        relation TEXT NOT NULL,
+        weight REAL NOT NULL,
+        source_lemma TEXT NOT NULL,
+        target_lemma TEXT NOT NULL,
+        reason TEXT NOT NULL CHECK (reason IN ('self_loop', 'dangling')),
+        PRIMARY KEY (source_lemma, target_lemma, relation)
+    )
+    """)
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_edges_quarantine_reason ON edges_quarantine (reason)"
+    )
+
+
+def _load_local_env() -> None:
+    """Load a sibling Hydra dotenv when that package is installed.
+
+    Verify and CSR export do not need it. Extraction does, and only then.
+    """
+    hydra_path = ROOT.parent / "hydra"
+    if str(hydra_path) not in sys.path:
+        sys.path.insert(0, str(hydra_path))
+    try:
+        from hydra_cli.config import load_dotenv
+    except ImportError:
+        return
+    load_dotenv()
 
 CANONICAL_RELATIONS: Set[str] = {
     "hypernym", "hyponym", "instance_of", "has_instance",
@@ -147,6 +182,7 @@ def get_db(db_path: Path = ROOT / "emap.db") -> sqlite3.Connection:
         timestamp TIMESTAMP NOT NULL
     )
     """)
+    _ensure_edges_quarantine(conn)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_nodes_lemma ON nodes (lemma)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_source ON edges (source_lemma)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_target ON edges (target_lemma)")
@@ -178,6 +214,49 @@ def resolve_target_ids(db: sqlite3.Connection) -> int:
         db.commit()
         db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
         return changed
+
+
+def quarantine_unwalkable_edges(db: sqlite3.Connection) -> Dict[str, int]:
+    """Move self-loops and targets with no sense into edges_quarantine.
+
+    A row whose lemmas match is a self_loop, including a loop whose lemma
+    also has no sense. Every other row whose target lemma is absent from
+    nodes is dangling. A second call moves nothing.
+    """
+    with DB_LOCK:
+        _ensure_edges_quarantine(db)
+        cursor = db.cursor()
+        cursor.execute("""
+        INSERT OR IGNORE INTO edges_quarantine
+            (source_id, target_id, relation, weight, source_lemma, target_lemma, reason)
+        SELECT e.source_id, e.target_id, e.relation, e.weight,
+               e.source_lemma, e.target_lemma,
+               CASE WHEN e.source_lemma = e.target_lemma THEN 'self_loop' ELSE 'dangling' END
+        FROM edges e
+        WHERE e.source_lemma = e.target_lemma
+           OR NOT EXISTS (
+                SELECT 1 FROM nodes n WHERE n.lemma = e.target_lemma
+           )
+        """)
+        moved = cursor.rowcount
+        cursor.execute("""
+        DELETE FROM edges
+        WHERE source_lemma = target_lemma
+           OR NOT EXISTS (
+                SELECT 1 FROM nodes n WHERE n.lemma = edges.target_lemma
+           )
+        """)
+        deleted = cursor.rowcount
+        db.commit()
+        counts = dict(cursor.execute(
+            "SELECT reason, COUNT(*) FROM edges_quarantine GROUP BY reason"
+        ))
+    return {
+        "moved": moved,
+        "deleted": deleted,
+        "self_loop": int(counts.get("self_loop", 0)),
+        "dangling": int(counts.get("dangling", 0)),
+    }
 
 
 def get_cumulative_cheaperinference_spend(db: sqlite3.Connection) -> float:
@@ -264,6 +343,7 @@ def parse_model_json(text: str) -> List[Dict[str, Any]]:
 
 def query_cheaperinference_glm53(db: sqlite3.Connection, lemmas: List[str], max_retries: int = 3) -> Optional[Tuple[List[Dict[str, Any]], str]]:
     """Query GLM 5.3 via CheaperInference with spend accumulator, retry loop, and $5.00 ceiling check."""
+    _load_local_env()
     key = os.environ.get("CHEAPERINFERENCE_API_KEY")
     if not key:
         return None
@@ -324,6 +404,7 @@ def query_cheaperinference_glm53(db: sqlite3.Connection, lemmas: List[str], max_
 
 def query_cloudflare_workers_ai(lemmas: List[str]) -> Optional[Tuple[List[Dict[str, Any]], str]]:
     """Query Cloudflare Workers AI under account subscription allocation."""
+    _load_local_env()
     token = os.environ.get("CLOUDFLARE_API_TOKEN")
     account = os.environ.get("CLOUDFLARE_ACCOUNT_ID")
     if not token or not account:
@@ -361,6 +442,7 @@ def query_cloudflare_workers_ai(lemmas: List[str]) -> Optional[Tuple[List[Dict[s
 
 def query_openrouter_free_forge(lemmas: List[str]) -> Optional[Tuple[List[Dict[str, Any]], str]]:
     """Query OpenRouter Free Forge models strictly enforcing :free fence."""
+    _load_local_env()
     key = os.environ.get("OPENROUTER_API_KEY")
     if not key:
         return None
@@ -519,6 +601,7 @@ def process_batch(db: sqlite3.Connection, batch_id: int, start_idx: int, end_idx
         """, (actual_model, nodes_inserted, edges_inserted, now_iso, batch_id))
         db.commit()
 
+    quarantine_unwalkable_edges(db)
     resolve_target_ids(db)
     return nodes_inserted, edges_inserted
 
