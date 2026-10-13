@@ -17,7 +17,7 @@ AUDIO_EXT = (".wav", ".mp3", ".ogg", ".flac", ".m4a")
 
 URL = re.compile(r"https?://[^\s<>\"]+")
 PATH = re.compile(
-    r"(?:(?:\./|\.\./|/(?!/))[^\s\"']+\.(?:png|jpe?g|gif|webp|wav|mp3|ogg|flac|m4a)|(?:[\w.-]+/)+[\w.-]+\.(?:png|jpe?g|gif|webp|wav|mp3|ogg|flac|m4a))",
+    r"(?:(?:[a-zA-Z]:[\\/]|(?:\./|\.\./|\.\\|\.\.\\|/(?!/)))[^\s\"']+\.(?:png|jpe?g|gif|webp|wav|mp3|ogg|flac|m4a)|(?:[\w.-]+[\\/])+[\w.-]+\.(?:png|jpe?g|gif|webp|wav|mp3|ogg|flac|m4a))",
     re.I,
 )
 

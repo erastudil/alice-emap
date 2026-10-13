@@ -200,7 +200,7 @@ def _browse_playwright(url: str, timeout: int) -> dict:
 def _kill_process_group(proc: subprocess.Popen) -> None:
     try:
         os.killpg(proc.pid, signal.SIGKILL)
-    except ProcessLookupError:
+    except (ProcessLookupError, AttributeError):
         proc.kill()
     try:
         proc.communicate(timeout=5)
@@ -564,6 +564,28 @@ def _browse_chrome(
         shutil.rmtree(profile, ignore_errors=True)
 
 
+def _webp_size(data: bytes) -> Optional[tuple]:
+    """Width and height from a VP8X, VP8, or VP8L chunk at the start of a RIFF WebP."""
+    if len(data) < 16 or data[:4] != b"RIFF" or data[8:12] != b"WEBP":
+        return None
+    kind = data[12:16]
+    if kind == b"VP8X" and len(data) >= 30:
+        width = int.from_bytes(data[24:27], "little") + 1
+        height = int.from_bytes(data[27:30], "little") + 1
+    elif kind == b"VP8 " and len(data) >= 30 and data[23:26] == b"\x9d\x01\x2a":
+        width = struct.unpack("<H", data[26:28])[0] & 0x3FFF
+        height = struct.unpack("<H", data[28:30])[0] & 0x3FFF
+    elif kind == b"VP8L" and len(data) >= 25 and data[20] == 0x2F:
+        bits = int.from_bytes(data[21:25], "little")
+        width = (bits & 0x3FFF) + 1
+        height = ((bits >> 14) & 0x3FFF) + 1
+    else:
+        return None
+    if width < 1 or height < 1:
+        return None
+    return width, height
+
+
 def image_header(path: Path) -> Optional[dict]:
     data = path.read_bytes()[:64]
     if data.startswith(b"\x89PNG\r\n\x1a\n") and len(data) >= 24:
@@ -589,6 +611,10 @@ def image_header(path: Path) -> Optional[dict]:
     if data.startswith((b"GIF87a", b"GIF89a")) and len(data) >= 10:
         width, height = struct.unpack("<HH", data[6:10])
         return {"format": "gif", "width": width, "height": height}
+    webp = _webp_size(data)
+    if webp:
+        width, height = webp
+        return {"format": "webp", "width": width, "height": height}
     return None
 
 
@@ -615,7 +641,7 @@ def see_image(path: Path) -> dict:
             "ok": False,
             "act": "silence-instrument",
             "source": "tool:see",
-            "answer": "The file does not have a png, jpeg, or gif header I can read.",
+            "answer": "The file does not have a png, jpeg, gif, or webp header I can read.",
             "next": "export the picture as png",
         }
     tesseract = shutil.which("tesseract")
