@@ -67,11 +67,37 @@ def test_categorical_proposition_formatting():
 
 def test_graph_loading():
     graph = PropositionalGraph(EMAP_DB)
-    assert len(graph.edges) > 10000
-    for s, t, rel, w in graph.edges[:50]:
+    conn = sqlite3.connect(str(EMAP_DB))
+    senses = {
+        row[0].strip().lower()
+        for row in conn.execute("SELECT lemma FROM nodes")
+        if row[0]
+    }
+    walkable = conn.execute(
+        """
+        SELECT count(*) FROM edges
+        WHERE source_lemma != target_lemma
+          AND length(source_lemma) > 1
+          AND length(target_lemma) > 1
+          AND source_lemma NOT LIKE '...%'
+          AND target_lemma NOT LIKE '...%'
+          AND target_id IS NOT NULL
+          AND EXISTS (
+              SELECT 1 FROM nodes n WHERE n.lemma = edges.target_lemma
+          )
+        """
+    ).fetchone()[0]
+    quarantined = conn.execute("SELECT count(*) FROM edges_quarantine").fetchone()[0]
+    conn.close()
+
+    assert quarantined > walkable
+    assert len(graph.edges) == walkable
+    assert walkable > 5000
+    for s, t, rel, w in graph.edges:
         assert s != t
         assert len(s) > 1
         assert len(t) > 1
+        assert t in senses
 
 
 def test_proposition_engine_compilation():
@@ -80,7 +106,7 @@ def test_proposition_engine_compilation():
     prop_engine.compile()
 
     props = list(prop_engine.propositions.values())
-    assert len(props) > 20000
+    assert len(props) > 8000
 
     types = {p.prop_type for p in props}
     assert types == {"A", "E", "I", "O"}
@@ -149,7 +175,7 @@ def test_database_persistence_and_scale():
     sorites_count = cur.execute("SELECT count(*) FROM sorites_chains").fetchone()[0]
     rules_count = cur.execute("SELECT count(*) FROM conditional_rules").fetchone()[0]
 
-    assert prop_count >= 30000, f"Propositions count {prop_count} < 30000"
+    assert prop_count >= 8000, f"Propositions count {prop_count} < 8000"
     assert syl_count >= 10000, f"Syllogisms count {syl_count} < 10000"
     assert sorites_count >= 1000, f"Sorites count {sorites_count} < 1000"
     assert rules_count >= 5000, f"Rules count {rules_count} < 5000"

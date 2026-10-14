@@ -325,25 +325,20 @@ class PropositionalGraph:
                 self.nodes_pos[lemma] = pos
                 self.nodes_gloss[lemma] = gloss
 
-        # Load clean edges across active and quarantined tables
-        has_quarantine = cur.execute(
-            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'edges_quarantine'"
-        ).fetchone() is not None
-        edge_source = (
-            "SELECT source_lemma, target_lemma, relation, weight FROM edges "
-            "UNION ALL "
-            "SELECT source_lemma, target_lemma, relation, weight FROM edges_quarantine"
-            if has_quarantine
-            else "SELECT source_lemma, target_lemma, relation, weight FROM edges"
-        )
-        query = f"""
+        # Walkable edges only. Self-loops and targets with no sense live in
+        # edges_quarantine and are not premises.
+        query = """
         SELECT source_lemma, target_lemma, relation, weight
-        FROM ({edge_source})
+        FROM edges
         WHERE source_lemma != target_lemma
           AND length(source_lemma) > 1
           AND length(target_lemma) > 1
           AND source_lemma NOT LIKE '...%'
           AND target_lemma NOT LIKE '...%'
+          AND target_id IS NOT NULL
+          AND EXISTS (
+              SELECT 1 FROM nodes n WHERE n.lemma = edges.target_lemma
+          )
         """
         for row in cur.execute(query):
             s, t, rel, w = row[0].strip().lower(), row[1].strip().lower(), row[2].strip().lower(), float(row[3])
