@@ -325,8 +325,8 @@ class PropositionalGraph:
                 self.nodes_pos[lemma] = pos
                 self.nodes_gloss[lemma] = gloss
 
-        # Walkable edges only. Self-loops and targets with no sense live in
-        # edges_quarantine and are not premises.
+        # Walkable edges only. Self-loops, targets with no sense, and sources
+        # with no sense live in edges_quarantine and are not premises.
         query = """
         SELECT source_lemma, target_lemma, relation, weight
         FROM edges
@@ -336,6 +336,9 @@ class PropositionalGraph:
           AND source_lemma NOT LIKE '...%'
           AND target_lemma NOT LIKE '...%'
           AND target_id IS NOT NULL
+          AND EXISTS (
+              SELECT 1 FROM nodes n WHERE n.lemma = edges.source_lemma
+          )
           AND EXISTS (
               SELECT 1 FROM nodes n WHERE n.lemma = edges.target_lemma
           )

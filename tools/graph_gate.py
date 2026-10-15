@@ -29,10 +29,14 @@ def check_graph_gate():
         quarantined_dangling = cur.execute(
             "SELECT count(*) FROM edges_quarantine WHERE reason = 'dangling'"
         ).fetchone()[0]
+        quarantined_unsensed = cur.execute(
+            "SELECT count(*) FROM edges_quarantine WHERE reason = 'unsensed_source'"
+        ).fetchone()[0]
     else:
         quarantine_count = 0
         quarantined_self = 0
         quarantined_dangling = 0
+        quarantined_unsensed = 0
 
     residual_self = cur.execute(
         "SELECT count(*) FROM edges WHERE source_lemma = target_lemma"
@@ -43,6 +47,12 @@ def check_graph_gate():
         WHERE NOT EXISTS (SELECT 1 FROM nodes n WHERE n.lemma = e.target_lemma)
         """
     ).fetchone()[0]
+    residual_unsensed = cur.execute(
+        """
+        SELECT count(*) FROM edges e
+        WHERE NOT EXISTS (SELECT 1 FROM nodes n WHERE n.lemma = e.source_lemma)
+        """
+    ).fetchone()[0]
     null_target_ids = cur.execute(
         "SELECT count(*) FROM edges WHERE target_id IS NULL"
     ).fetchone()[0]
@@ -51,6 +61,7 @@ def check_graph_gate():
         SELECT count(*) FROM edges e
         WHERE e.target_id IS NOT NULL
           AND e.source_lemma != e.target_lemma
+          AND EXISTS (SELECT 1 FROM nodes n WHERE n.lemma = e.source_lemma)
           AND EXISTS (SELECT 1 FROM nodes n WHERE n.lemma = e.target_lemma)
         """
     ).fetchone()[0]
@@ -78,8 +89,10 @@ def check_graph_gate():
     print(f"Quarantine:             {quarantine_count}")
     print(f"  Self-loops:           {quarantined_self}")
     print(f"  Dangling Targets:     {quarantined_dangling}")
+    print(f"  Unsensed Sources:     {quarantined_unsensed}")
     print(f"  Residual Self-loops:  {residual_self}")
     print(f"  Residual Dangling:    {residual_dangling}")
+    print(f"  Residual Unsensed:    {residual_unsensed}")
     print(f"  Null Target IDs:      {null_target_ids}")
     print(f"Stub T1 Decompositions: {stub_t1_count}")
     print(f"Dewey 813.54 Outliers:  {dewey_813_count}")
@@ -93,8 +106,10 @@ def check_graph_gate():
         "quarantine": quarantine_count,
         "self_loops": quarantined_self,
         "dangling": quarantined_dangling,
+        "unsensed_source": quarantined_unsensed,
         "residual_self": residual_self,
         "residual_dangling": residual_dangling,
+        "residual_unsensed": residual_unsensed,
         "stub_t1": stub_t1_count,
         "dewey_813": dewey_813_count,
         "short_gloss": short_gloss_count,

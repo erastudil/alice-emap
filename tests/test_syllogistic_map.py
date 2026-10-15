@@ -83,6 +83,9 @@ def test_graph_loading():
           AND target_lemma NOT LIKE '...%'
           AND target_id IS NOT NULL
           AND EXISTS (
+              SELECT 1 FROM nodes n WHERE n.lemma = edges.source_lemma
+          )
+          AND EXISTS (
               SELECT 1 FROM nodes n WHERE n.lemma = edges.target_lemma
           )
         """
@@ -97,6 +100,7 @@ def test_graph_loading():
         assert s != t
         assert len(s) > 1
         assert len(t) > 1
+        assert s in senses
         assert t in senses
 
 

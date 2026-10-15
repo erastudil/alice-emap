@@ -30,20 +30,49 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 ROOT = Path(__file__).resolve().parent
 
 
-def _ensure_edges_quarantine(conn: sqlite3.Connection) -> None:
-    """Create the quarantine table. Opening the database does not move rows."""
-    conn.execute("""
-    CREATE TABLE IF NOT EXISTS edges_quarantine (
+_QUARANTINE_REASONS = ("self_loop", "dangling", "unsensed_source")
+
+
+def _quarantine_ddl(name: str) -> str:
+    reasons = ", ".join(f"'{reason}'" for reason in _QUARANTINE_REASONS)
+    return f"""
+    CREATE TABLE {name} (
         source_id INTEGER NOT NULL,
         target_id INTEGER,
         relation TEXT NOT NULL,
         weight REAL NOT NULL,
         source_lemma TEXT NOT NULL,
         target_lemma TEXT NOT NULL,
-        reason TEXT NOT NULL CHECK (reason IN ('self_loop', 'dangling')),
+        reason TEXT NOT NULL CHECK (reason IN ({reasons})),
         PRIMARY KEY (source_lemma, target_lemma, relation)
     )
-    """)
+    """
+
+
+def _ensure_edges_quarantine(conn: sqlite3.Connection) -> None:
+    """Create the quarantine table. Opening the database does not move rows.
+
+    A table created before unsensed sources were a reason is rebuilt so the
+    check constraint accepts that reason. Existing rows are copied across.
+    """
+    existing = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'edges_quarantine'"
+    ).fetchone()
+    if existing is None:
+        conn.execute(_quarantine_ddl("edges_quarantine"))
+    elif "unsensed_source" not in existing[0]:
+        conn.execute(_quarantine_ddl("edges_quarantine_next"))
+        conn.execute("""
+            INSERT INTO edges_quarantine_next (
+                source_id, target_id, relation, weight,
+                source_lemma, target_lemma, reason
+            )
+            SELECT source_id, target_id, relation, weight,
+                   source_lemma, target_lemma, reason
+            FROM edges_quarantine
+        """)
+        conn.execute("DROP TABLE edges_quarantine")
+        conn.execute("ALTER TABLE edges_quarantine_next RENAME TO edges_quarantine")
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_edges_quarantine_reason ON edges_quarantine (reason)"
     )
@@ -217,11 +246,12 @@ def resolve_target_ids(db: sqlite3.Connection) -> int:
 
 
 def quarantine_unwalkable_edges(db: sqlite3.Connection) -> Dict[str, int]:
-    """Move self-loops and targets with no sense into edges_quarantine.
+    """Move self-loops and edges with a missing sense into edges_quarantine.
 
     A row whose lemmas match is a self_loop, including a loop whose lemma
     also has no sense. Every other row whose target lemma is absent from
-    nodes is dangling. A second call moves nothing.
+    nodes is dangling. A row whose target has a sense and whose source
+    lemma does not is unsensed_source. A second call moves nothing.
     """
     with DB_LOCK:
         _ensure_edges_quarantine(db)
@@ -231,11 +261,20 @@ def quarantine_unwalkable_edges(db: sqlite3.Connection) -> Dict[str, int]:
             (source_id, target_id, relation, weight, source_lemma, target_lemma, reason)
         SELECT e.source_id, e.target_id, e.relation, e.weight,
                e.source_lemma, e.target_lemma,
-               CASE WHEN e.source_lemma = e.target_lemma THEN 'self_loop' ELSE 'dangling' END
+               CASE
+                   WHEN e.source_lemma = e.target_lemma THEN 'self_loop'
+                   WHEN NOT EXISTS (
+                       SELECT 1 FROM nodes n WHERE n.lemma = e.target_lemma
+                   ) THEN 'dangling'
+                   ELSE 'unsensed_source'
+               END
         FROM edges e
         WHERE e.source_lemma = e.target_lemma
            OR NOT EXISTS (
                 SELECT 1 FROM nodes n WHERE n.lemma = e.target_lemma
+           )
+           OR NOT EXISTS (
+                SELECT 1 FROM nodes n WHERE n.lemma = e.source_lemma
            )
         """)
         moved = cursor.rowcount
@@ -244,6 +283,9 @@ def quarantine_unwalkable_edges(db: sqlite3.Connection) -> Dict[str, int]:
         WHERE source_lemma = target_lemma
            OR NOT EXISTS (
                 SELECT 1 FROM nodes n WHERE n.lemma = edges.target_lemma
+           )
+           OR NOT EXISTS (
+                SELECT 1 FROM nodes n WHERE n.lemma = edges.source_lemma
            )
         """)
         deleted = cursor.rowcount
@@ -256,6 +298,7 @@ def quarantine_unwalkable_edges(db: sqlite3.Connection) -> Dict[str, int]:
         "deleted": deleted,
         "self_loop": int(counts.get("self_loop", 0)),
         "dangling": int(counts.get("dangling", 0)),
+        "unsensed_source": int(counts.get("unsensed_source", 0)),
     }
 
 

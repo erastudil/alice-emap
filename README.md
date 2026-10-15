@@ -5,7 +5,7 @@ Alice answers from a word map, a stack of vetted sentences, and a short list of 
 ## What is in the tree
 
 - `alice_decision_engine.py` walks COMPUTE, then RETRIEVE, then HAND, then ABSTAIN.
-- `emap.db` holds 44000 lemmas and 24240 sense nodes. Self-loops and targets with no sense sit in `edges_quarantine`, and the 5390 walkable edges in `edges` have `target_id` resolved.
+- `emap.db` holds 44000 lemmas and 24240 sense nodes. Self-loops, targets with no sense, and sources with no sense sit in `edges_quarantine`. The 5383 walkable edges in `edges` have both lemmas sensed and `target_id` resolved.
 - `SPEC.md` is the contract. Version 1.1.0 records the measured baseline and the layers still to build.
 - `ROADMAP.md` and `QUEUE.md` are the work order.
 - `prompts/hydra/` holds the Free Forge prompts that repair glosses, Dewey codes, and kernel forms.

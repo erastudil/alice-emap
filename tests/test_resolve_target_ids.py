@@ -57,9 +57,9 @@ def test_walkable_edges_have_both_ids():
         has_quarantine = cur.execute(
             "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'edges_quarantine'"
         ).fetchone() is not None
-        expected_resolved = 5390 if has_quarantine else 6738
+        expected_resolved = 5383 if has_quarantine else 6738
         assert resolved == expected_resolved
-        assert walkable == 5390
+        assert walkable == 5383
 
         row = cur.execute("""
             SELECT target_id FROM edges

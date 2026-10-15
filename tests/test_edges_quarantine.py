@@ -1,6 +1,7 @@
 """Quarantine checks against the real emap.db.
 
-Self-loops and targets with no sense leave `edges`. A second pass moves nothing.
+Self-loops, targets with no sense, and sources with no sense leave `edges`.
+A second pass moves nothing.
 """
 
 import sqlite3
@@ -17,7 +18,8 @@ DB_PATH = ROOT / "emap.db"
 MEASURED_EDGES = 21195
 SELF_LOOPS = 1353
 DANGLING = 14452
-KEPT = 5390
+UNSENSED_SOURCE = 7
+KEPT = 5383
 
 
 def _connect() -> sqlite3.Connection:
@@ -38,7 +40,11 @@ def test_quarantine_is_idempotent_and_conserves_rows():
     assert second["deleted"] == 0
     assert first["self_loop"] == SELF_LOOPS
     assert first["dangling"] == DANGLING
-    assert first["self_loop"] + first["dangling"] + KEPT == MEASURED_EDGES
+    assert first["unsensed_source"] == UNSENSED_SOURCE
+    assert (
+        first["self_loop"] + first["dangling"] + first["unsensed_source"] + KEPT
+        == MEASURED_EDGES
+    )
 
 
 def test_edges_have_no_self_loops_or_dangling_targets():
@@ -53,6 +59,12 @@ def test_edges_have_no_self_loops_or_dangling_targets():
             """
             SELECT count(*) FROM edges e
             WHERE NOT EXISTS (SELECT 1 FROM nodes n WHERE n.lemma = e.target_lemma)
+            """
+        ).fetchone()[0]
+        unsensed = cur.execute(
+            """
+            SELECT count(*) FROM edges e
+            WHERE NOT EXISTS (SELECT 1 FROM nodes n WHERE n.lemma = e.source_lemma)
             """
         ).fetchone()[0]
         overlap = cur.execute(
@@ -80,6 +92,21 @@ def test_edges_have_no_self_loops_or_dangling_targets():
               )
             """
         ).fetchone()[0]
+        bad_unsensed = cur.execute(
+            """
+            SELECT count(*) FROM edges_quarantine q
+            WHERE q.reason = 'unsensed_source'
+              AND (
+                    q.source_lemma = q.target_lemma
+                    OR NOT EXISTS (
+                        SELECT 1 FROM nodes n WHERE n.lemma = q.target_lemma
+                    )
+                    OR EXISTS (
+                        SELECT 1 FROM nodes n WHERE n.lemma = q.source_lemma
+                    )
+              )
+            """
+        ).fetchone()[0]
         sense_targets = cur.execute(
             """
             SELECT count(*) FROM edges e
@@ -92,7 +119,9 @@ def test_edges_have_no_self_loops_or_dangling_targets():
     assert edges == KEPT
     assert self_loops == 0
     assert dangling == 0
+    assert unsensed == 0
     assert overlap == 0
     assert bad_self == 0
     assert bad_dangling == 0
+    assert bad_unsensed == 0
     assert sense_targets == edges

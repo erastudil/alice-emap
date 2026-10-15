@@ -30,7 +30,7 @@ sense nodes: 24240 rows in `nodes`. 19760 inventory lemmas have no sense.
 
 kernel flag: 120 lemmas marked `is_kernel = 1`.
 
-edges: 21195 rows measured on 2026-10-06, every `target_id` NULL, 14457 targets with no sense, 1353 self-loops. On 2026-10-11 those defects sit in `edges_quarantine`: 1353 `self_loop` (5 of them also have no sense) and 14452 `dangling`. `edges` holds the other 5390 walkable rows, each with `target_id` set to the sense with the same lemma (the lowest node id when a lemma has two senses).
+edges: 21195 rows measured on 2026-10-06, every `target_id` NULL, 14457 targets with no sense, 1353 self-loops. On 2026-10-11 those defects sit in `edges_quarantine`: 1353 `self_loop` (5 of them also have no sense) and 14452 `dangling`. On 2026-10-15 the seven rows whose source lemma has no sense moved there too, reason `unsensed_source`. `edges` holds the other 5383 walkable rows. Each has `target_id` set to the sense with the same lemma (the lowest node id when a lemma has two senses), and the source lemma has a sense.
 
 relation mix across `edges` and `edges_quarantine`: hypernym 5480, synonym 3583, entails 3263, instance_of 1766, antonym 1028, derivation 994, and the remaining closed names down to bridge_analogy 27. All 24 canonical names occur.
 
@@ -40,7 +40,7 @@ logic stubs: `NAME(x)` 1437, `PERSON(x)` 1087, `LOCATION(x)` 560, `NOUN(x)` 289,
 
 batches: 880 completed. CheaperInference GLM 5.3 spend $5.06 across 492 calls, past the $5.00 ceiling in `build_emap_graph.py`.
 
-csr: `emap_csr.bin` payload 134661 bytes, 24240 nodes, 5383 edges, exported from `edges` after quarantine and `target_id` resolution. Seven kept edges have a source lemma with no sense and are absent from the binary.
+csr: `emap_csr.bin` payload 134661 bytes, 24240 nodes, 5383 edges, exported from `edges` after quarantine and `target_id` resolution. The binary edge count equals the walkable row count.
 
 running router: `alice_decision_engine.py`. COMPUTE covers rational arithmetic, a closed SI unit table, and proleptic Gregorian dates. RETRIEVE covers three regular expressions over a single alphabetic token. HAND covers three stored strings. ABSTAIN is the miss.
 
@@ -72,7 +72,7 @@ open pointers: every other token. Resolution order is exact lemma, then `form_of
 
 ungrounded token: the resolution order misses, or the hop leaves the walkable subgraph. That span is ungrounded. A frame that requires it abstains.
 
-walkable subgraph: edges whose `target_id` resolves, whose endpoints differ, and whose relation is one of the 24 names. Quarantine holds the rest. Retrieval walks only the walkable subgraph.
+walkable subgraph: edges whose source lemma and `target_id` both resolve to a sense, whose endpoints differ, and whose relation is one of the 24 names. Quarantine holds the rest. Retrieval walks only the walkable subgraph.
 
 # 5. Layers
 
@@ -114,7 +114,7 @@ closed relations: hypernym, hyponym, instance_of, has_instance, part_of, has_par
 
 identity: 32-bit id. Bits 31..29 are POS. Bits 28..26 are tier. Bits 25..0 are the local id. Packing lives in `pack_node_id`.
 
-edge row: `source_id`, `target_id`, `relation`, `weight` in (0, 1], `source_lemma`, `target_lemma`. A walkable row has both ids set and `source_lemma != target_lemma`.
+edge row: `source_id`, `target_id`, `relation`, `weight` in (0, 1], `source_lemma`, `target_lemma`. A walkable row has both ids set, both lemmas present in `nodes`, and `source_lemma != target_lemma`.
 
 dewey: a code from the EasyLM stack table, or a finer DDC section whose parent is one of those codes. Code `813.54` is legal only when the gloss is a work of American fiction. The stack parents are 001, 004, 005, 005.8, 006, 100, 150, 181, 200, 300, 320, 330, 340, 400, 510, 520, 530, 540, 550, 570, 610, 620, 630, 650, 690, 700, 780, 800, 811, 900, 910.
 
@@ -150,7 +150,7 @@ ABSTAIN: `provenance` is null.
 
 lattice tests: `python -m pytest -v tests/test_alice_decision_model.py` exits 0.
 
-graph gate: walkable edges have zero null `target_id`, zero self-loops, and zero targets missing a sense. The gate prints the quarantine count.
+graph gate: walkable edges have zero null `target_id`, zero self-loops, zero targets missing a sense, and zero sources missing a sense. The gate prints the quarantine count.
 
 repair gate: stub T1 labels are zero on walkable nodes. Dewey `813.54` count equals the count of nodes whose gloss is American fiction.
 
