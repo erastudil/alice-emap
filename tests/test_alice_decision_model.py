@@ -1,4 +1,4 @@
-﻿"""test_alice_decision_model.py - Expanded Test Suite for Alice 1.0 Decision Engine.
+"""test_alice_decision_model.py - Expanded Test Suite for Alice 1.0 Decision Engine.
 
 Verifies:
 1. Rational CAS exact arithmetic evaluation (fractions, powers, gcd, lcm).
@@ -13,7 +13,30 @@ Verifies:
 import re
 import sys
 from pathlib import Path
-import pytest
+import unittest
+
+try:
+    import pytest
+except ImportError:
+    import contextlib
+
+    class _PytestFallback:
+        @staticmethod
+        def fixture(*args, **kwargs):
+            def _decorator(fn):
+                return fn
+            return _decorator
+
+        @staticmethod
+        @contextlib.contextmanager
+        def raises(exc_type):
+            try:
+                yield
+            except exc_type:
+                return
+            raise AssertionError(f"Expected {exc_type.__name__} to be raised")
+
+    pytest = _PytestFallback()
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -192,3 +215,20 @@ class TestAliceDecisionModel:
                 assert len(receipt.provenance.digest) == 64
                 assert re.match(r"^[0-9a-f]{64}$", receipt.provenance.digest) is not None
                 assert receipt.latency_ms > 0.0
+
+
+class TestAliceDecisionModelUnittest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.engine = AliceDecisionEngine()
+        cls.suite = TestAliceDecisionModel()
+
+    def test_decision_engine_suite(self):
+        for name in sorted(dir(self.suite)):
+            if name.startswith("test_"):
+                with self.subTest(check=name):
+                    getattr(self.suite, name)(self.engine)
+
+
+if __name__ == "__main__":
+    unittest.main()

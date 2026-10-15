@@ -769,16 +769,32 @@ def draw_svg(prompt: str) -> str:
     )
 
 
+def _search_code_python(pattern: str, root: Path, max_count: int = 20) -> list[str]:
+    try:
+        regex = re.compile(pattern)
+    except re.error:
+        regex = re.compile(re.escape(pattern))
+    matches: list[str] = []
+    search_root = root if root.is_dir() else root.parent
+    for dirpath, dirnames, filenames in os.walk(search_root):
+        dirnames[:] = sorted(d for d in dirnames if d not in {".git", "__pycache__", "node_modules", ".venv"})
+        for fname in sorted(filenames):
+            if fname.endswith((".jsonl", ".db", ".bin", ".pyc", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".wav")):
+                continue
+            fpath = Path(dirpath) / fname
+            try:
+                text = fpath.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            for idx, line in enumerate(text.splitlines(), 1):
+                if regex.search(line):
+                    matches.append(f"{fpath}:{idx}:{line}")
+                    if len(matches) >= max_count:
+                        return matches
+    return matches
+
+
 def search_code(pattern: str, root: Path, timeout: int = 8) -> dict:
-    rg = shutil.which("rg")
-    if not rg:
-        return {
-            "ok": False,
-            "act": "silence-instrument",
-            "source": "tool:rg",
-            "answer": "ripgrep is not installed.",
-            "next": "install rg",
-        }
     if not pattern.strip():
         return {
             "ok": False,
@@ -786,6 +802,24 @@ def search_code(pattern: str, root: Path, timeout: int = 8) -> dict:
             "source": "tool:rg",
             "answer": "A code search needs a quoted pattern.",
             "next": 'rg "pattern"',
+        }
+    rg = shutil.which("rg")
+    if not rg:
+        lines = _search_code_python(pattern, root, max_count=20)
+        if not lines:
+            return {
+                "ok": True,
+                "act": "say",
+                "source": "tool:rg",
+                "answer": f"No matches for {pattern} under {root}.",
+                "next": "",
+            }
+        return {
+            "ok": True,
+            "act": "say",
+            "source": "tool:rg",
+            "answer": "\n".join(lines),
+            "next": "",
         }
     proc = subprocess.run(
         [rg, "-n", "--max-count", "20", "-g", "!*.jsonl", "-g", "!.git", pattern, str(root)],

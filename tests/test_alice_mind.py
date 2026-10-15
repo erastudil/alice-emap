@@ -3,12 +3,39 @@
 import shutil
 import struct
 import sys
+import tempfile
 import threading
+import unittest
 import wave
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-import pytest
+try:
+    import pytest
+except ImportError:
+    import contextlib
+
+    class _PytestFallback:
+        @staticmethod
+        def fixture(*args, **kwargs):
+            def _decorator(fn):
+                return fn
+            return _decorator
+
+        @staticmethod
+        @contextlib.contextmanager
+        def raises(exc_type):
+            try:
+                yield
+            except exc_type:
+                return
+            raise AssertionError(f"Expected {exc_type.__name__} to be raised")
+
+        @staticmethod
+        def skip(msg: str = ""):
+            raise unittest.SkipTest(msg)
+
+    pytest = _PytestFallback()
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -237,3 +264,29 @@ def test_house_stack_card():
     turn = run_turn("what is vercel")
     assert turn["source"] == "house:vercel"
     assert "easylm.app" in turn["answer"]
+
+
+class TestAliceMindUnittest(unittest.TestCase):
+    def test_all_mind_checks(self):
+        test_swarm_is_cited_and_not_a_sample()
+        test_agent_command_keeps_the_voice()
+        test_private_browse_abstains()
+        test_redirect_to_loopback_is_not_read()
+        test_private_subresource_does_not_hide_a_public_page()
+        if _chrome_bin():
+            test_chrome_reads_a_public_page_and_drops_a_private_redirect()
+        test_public_browse_command_is_playwright()
+        test_whisper_card_for_a_library_question()
+        test_math_and_stacks_still_outrank_the_new_shelves()
+        test_house_stack_card()
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            test_draw_writes_a_red_circle(tmp)
+            test_see_reads_a_png_header(tmp)
+            test_see_reads_a_webp_header(tmp)
+            test_hear_reports_the_container(tmp)
+            test_code_search_reads_the_tree(tmp)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -3,7 +3,31 @@
 import sys
 from pathlib import Path
 
-import pytest
+import tempfile
+import unittest
+
+try:
+    import pytest
+except ImportError:
+    import contextlib
+
+    class _PytestFallback:
+        @staticmethod
+        def fixture(*args, **kwargs):
+            def _decorator(fn):
+                return fn
+            return _decorator
+
+        @staticmethod
+        @contextlib.contextmanager
+        def raises(exc_type):
+            try:
+                yield
+            except exc_type:
+                return
+            raise AssertionError(f"Expected {exc_type.__name__} to be raised")
+
+    pytest = _PytestFallback()
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -63,3 +87,19 @@ def test_outside_domain_names_the_gap():
 def test_unknown_personality():
     with pytest.raises(KeyError):
         run_turn("hello", personality="wizard")
+
+
+class TestAliceSessionUnittest(unittest.TestCase):
+    def test_all_session_checks(self):
+        with tempfile.TemporaryDirectory() as td:
+            mem = Path(td) / "memory.db"
+            test_compute_still_wins(mem)
+            test_memory_round_trip(mem)
+        test_stack_card_cites_the_constant()
+        test_feature_how_to()
+        test_outside_domain_names_the_gap()
+        test_unknown_personality()
+
+
+if __name__ == "__main__":
+    unittest.main()
