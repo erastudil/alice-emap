@@ -17,9 +17,9 @@ from build_emap_graph import quarantine_unwalkable_edges
 DB_PATH = ROOT / "emap.db"
 MEASURED_EDGES = 21195
 SELF_LOOPS = 1353
-DANGLING = 14452
-UNSENSED_SOURCE = 7
-KEPT = 5383
+DANGLING = 0
+UNSENSED_SOURCE = 0
+KEPT = 19842
 
 
 def _connect() -> sqlite3.Connection:

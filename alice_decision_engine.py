@@ -1,4 +1,4 @@
-﻿"""alice_decision_engine.py - Alice 1.0 Decision Model & Arbitration Engine.
+"""alice_decision_engine.py - Alice 1.0 Decision Model & Arbitration Engine.
 
 Implements the formal arbitration lattice and provenance pipeline defined in emap/SPEC.md:
 1. COMPUTE: deterministic execution for rational CAS arithmetic, SI 7-dimension units, and Gregorian datetime.
@@ -390,7 +390,7 @@ class DeweyGraphNavigator:
         q_lower = query.lower().strip()
 
         # 1. Relation pattern
-        rel_pattern = r"(?:what\s+is\s+the\s+)?(hypernym|antonym|synonym|part|opposite|kind)\s+of\s+([a-zA-Z]+)"
+        rel_pattern = r"^(?:what\s+is\s+the\s+)?(hypernym|antonym|synonym|part|opposite|kind)\s+of\s+([a-zA-Z]+)[?.!]*$"
         m_rel = re.search(rel_pattern, q_lower)
         if m_rel:
             raw_rel, lem = m_rel.groups()
@@ -415,7 +415,7 @@ class DeweyGraphNavigator:
                 return ans, confidence, meta
 
         # 2. Dewey Classification
-        m_dewey = re.search(r"(?:what\s+is\s+the\s+)?dewey\s+(?:code|category|classification|shelf)?\s*(?:for|of)?\s+([a-zA-Z]+)", q_lower)
+        m_dewey = re.search(r"^(?:what\s+is\s+the\s+)?dewey\s+(?:code|category|classification|shelf)?\s*(?:for|of)?\s+([a-zA-Z]+)[?.!]*$", q_lower)
         if m_dewey:
             lem = m_dewey.group(1)
             cur.execute("SELECT lemma, pos, dewey, depth, gloss FROM nodes WHERE lemma = ?", (lem,))
@@ -433,7 +433,7 @@ class DeweyGraphNavigator:
                 return ans, 0.95, meta
 
         # 3. Direct Definition
-        m_def = re.search(r"(?:define|meaning\s+of|definition\s+of|what\s+is)\s+([a-zA-Z]+)", q_lower)
+        m_def = re.search(r"^(?:define|meaning\s+of|definition\s+of)\s+([a-zA-Z]+)[?.!]*$", q_lower)
         if m_def:
             lem = m_def.group(1)
             cur.execute("SELECT lemma, pos, gloss, dewey, t1_decomposition, depth FROM nodes WHERE lemma = ?", (lem,))

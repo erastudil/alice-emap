@@ -93,9 +93,9 @@ def test_graph_loading():
     quarantined = conn.execute("SELECT count(*) FROM edges_quarantine").fetchone()[0]
     conn.close()
 
-    assert quarantined > walkable
+    assert walkable > quarantined
     assert len(graph.edges) == walkable
-    assert walkable > 5000
+    assert walkable > 19000
     for s, t, rel, w in graph.edges:
         assert s != t
         assert len(s) > 1
