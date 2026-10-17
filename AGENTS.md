@@ -17,7 +17,7 @@ normative specification : SPEC.md.
 
 ## topological graph contract
 
-graph manifold : 44000 lemmas and 24240 sense nodes organized under 24 closed relation names in emap.db and emap_csr.bin.
+graph manifold : 46023 lemmas and 46025 sense nodes organized under 24 closed relation names in emap.db and emap_csr.bin.
 
 factual invariant : model weights carry zero truth value for factual claims; emitted facts derive solely from vetted cards or typed tool execution.
 

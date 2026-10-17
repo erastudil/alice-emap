@@ -42,6 +42,8 @@ batches: 880 completed. CheaperInference GLM 5.3 spend $5.06 across 492 calls, p
 
 csr: `emap_csr.bin` payload 134661 bytes, 24240 nodes, 5383 edges, exported from `edges` after quarantine and `target_id` resolution. The binary edge count equals the walkable row count.
 
+current lattice, read 2026-10-17: `lemmas` 46023, `nodes` 46025, unsensed inventory lemmas 0. `edges` holds 19842 walkable rows. `edges_quarantine` holds 1353 `self_loop` and zero `dangling` or `unsensed_source`. `emap_csr.bin` payload 323014 bytes, 46025 nodes, 19842 edges. The binary edge count equals the walkable row count.
+
 running router: `alice_decision_engine.py`. COMPUTE covers rational arithmetic, a closed SI unit table, and proleptic Gregorian dates. RETRIEVE covers three regular expressions over a single alphabetic token. HAND covers three stored strings. ABSTAIN is the miss.
 
 stack shelf waiting to be bound: EasyLM `stacks/*/FACTS.md`, 1572 verified units, 31 Dewey subjects, catalogued in `stacks/FACTS_INDEX.md`.
