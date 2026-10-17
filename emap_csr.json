@@ -1,8 +1,8 @@
 {
   "magic": "EMAP",
   "version": "1.0.0",
-  "node_count": 46025,
-  "edge_count": 19842,
-  "payload_bytes": 323014,
-  "exported_at": "2026-10-17T04:02:03.590211+00:00"
+  "node_count": 46030,
+  "edge_count": 46322,
+  "payload_bytes": 508394,
+  "exported_at": "2026-10-17T20:46:45.529518+00:00"
 }
