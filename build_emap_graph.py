@@ -1,6 +1,6 @@
 """build_emap_graph.py - Alice 1.0 EMap Graph Scaling & Multi-Pool Harness.
 
-Partitions the 44,000 lemma inventory, executes wide fan-out across:
+Partitions the 46,023 lemma inventory, executes wide fan-out across:
 1. CheaperInference GLM 5.3 (with strict $5.00 cumulative spend ceiling)
 2. OpenRouter Free Forge (strict fence: only :free models permitted, zero paid calls)
 3. Cloudflare Workers AI (under account subscription allocation)
