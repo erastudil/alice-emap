@@ -64,7 +64,7 @@ The Alice EMap architecture bridges high-dimensional language representations wi
 - **Base Model**: Qwen/Qwen2.5-3B-Instruct
 - **Adapter Rank**: r = 16, alpha = 32, dropout 0.05
 - **Target Projections**: q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj
-- **Topology Inclusion**: Bundled with emap_csr.bin (44,000 lemmas, 24,240 sense nodes, 21,169 CSR edges) and emap_csr.json
+- **Topology Inclusion**: Bundled with emap_csr.bin (46,028 lemmas, 46,030 sense nodes, 46,322 CSR edges) and emap_csr.json
 - **Specification**: Complete mathematical formulation in SPEC.md
 - **GitHub Repository**: [erastudil/alice-emap](https://github.com/erastudil/alice-emap)
 
