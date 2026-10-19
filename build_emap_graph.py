@@ -801,27 +801,31 @@ def verify_graph(db: sqlite3.Connection) -> Dict[str, Any]:
 
 
 def export_csr(db: sqlite3.Connection, out_bin: Path = ROOT / "emap_csr.bin", out_meta: Path = ROOT / "emap_csr.json") -> int:
-    """Resolve target ids, then export the CSR binary named in emap/SPEC.md."""
+    """Resolve target ids, then export the CSR binary named in emap/SPEC.md.
+
+    Each sense is one row, ordered by node id. An edge is filed on source_id
+    and lands on target_id, so two senses of one lemma do not share a slot.
+    """
     resolve_target_ids(db)
     with DB_LOCK:
         cursor = db.cursor()
-        cursor.execute("SELECT lemma, id FROM nodes ORDER BY id")
-        node_rows = cursor.fetchall()
-        if not node_rows:
+        cursor.execute("SELECT id FROM nodes ORDER BY id")
+        node_ids = [row[0] for row in cursor.fetchall()]
+        if not node_ids:
             print("no nodes present for CSR export")
             return 0
 
-        node_to_idx = {r[0]: i for i, r in enumerate(node_rows)}
-        n_nodes = len(node_rows)
+        id_to_idx = {node_id: i for i, node_id in enumerate(node_ids)}
+        n_nodes = len(node_ids)
 
         adj: List[List[Tuple[int, float, int]]] = [[] for _ in range(n_nodes)]
-        cursor.execute("SELECT source_lemma, target_lemma, relation, weight FROM edges")
+        cursor.execute("SELECT source_id, target_id, relation, weight FROM edges")
         edge_rows = cursor.fetchall()
 
     actual_edge_count = 0
-    for s_lem, t_lem, rel, w in edge_rows:
-        s_idx = node_to_idx.get(s_lem)
-        t_idx = node_to_idx.get(t_lem)
+    for s_id, t_id, rel, w in edge_rows:
+        s_idx = id_to_idx.get(s_id)
+        t_idx = id_to_idx.get(t_id)
         # Index 0 is a real node (lemma ζ). A missing target must not land there.
         if s_idx is None or t_idx is None:
             continue
