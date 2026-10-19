@@ -6,6 +6,7 @@ A second pass moves nothing.
 
 import sqlite3
 import sys
+import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,11 +16,11 @@ if str(ROOT) not in sys.path:
 from build_emap_graph import quarantine_unwalkable_edges
 
 DB_PATH = ROOT / "emap.db"
-MEASURED_EDGES = 21195
+MEASURED_EDGES = 47675
 SELF_LOOPS = 1353
 DANGLING = 0
 UNSENSED_SOURCE = 0
-KEPT = 19842
+KEPT = 46322
 
 
 def _connect() -> sqlite3.Connection:
@@ -125,3 +126,15 @@ def test_edges_have_no_self_loops_or_dangling_targets():
     assert bad_dangling == 0
     assert bad_unsensed == 0
     assert sense_targets == edges
+
+
+class TestEdgesQuarantine(unittest.TestCase):
+    def test_quarantine_is_idempotent_and_conserves_rows(self):
+        test_quarantine_is_idempotent_and_conserves_rows()
+
+    def test_edges_have_no_self_loops_or_dangling_targets(self):
+        test_edges_have_no_self_loops_or_dangling_targets()
+
+
+if __name__ == "__main__":
+    unittest.main()

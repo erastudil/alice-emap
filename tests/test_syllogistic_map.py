@@ -3,7 +3,12 @@
 import json
 import pathlib
 import sqlite3
-import pytest
+import sys
+import unittest
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from build_syllogistic_map import (
     MOOD_DEFINITIONS,
@@ -19,7 +24,6 @@ from build_syllogistic_map import (
     clean_label
 )
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
 EMAP_DB = ROOT / "emap.db"
 SYL_DB = ROOT / "syllogistic_map.db"
 SYL_JSONL = ROOT / "syllogisms.jsonl"
@@ -203,3 +207,36 @@ def test_jsonl_validity():
             if line_count > 500:
                 break
     assert line_count > 500
+
+
+class TestSyllogisticMap(unittest.TestCase):
+    def test_mood_definitions_count(self):
+        test_mood_definitions_count()
+
+    def test_categorical_proposition_formatting(self):
+        test_categorical_proposition_formatting()
+
+    def test_graph_loading(self):
+        test_graph_loading()
+
+    def test_proposition_engine_compilation(self):
+        test_proposition_engine_compilation()
+
+    def test_syllogism_derivation_all_moods(self):
+        test_syllogism_derivation_all_moods()
+
+    def test_sorites_chain_synthesis(self):
+        test_sorites_chain_synthesis()
+
+    def test_conditional_rule_synthesis(self):
+        test_conditional_rule_synthesis()
+
+    def test_database_persistence_and_scale(self):
+        test_database_persistence_and_scale()
+
+    def test_jsonl_validity(self):
+        test_jsonl_validity()
+
+
+if __name__ == "__main__":
+    unittest.main()
