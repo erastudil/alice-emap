@@ -217,6 +217,107 @@ class TestAliceDecisionModel:
                 assert receipt.latency_ms > 0.0
 
 
+    def test_l1_frame_table_coverage(self, engine: AliceDecisionEngine):
+        """Test all 14 L1 frames in alice_frames.py match canonical prompts (Q3.1)."""
+        from alice_frames import FRAME_TABLE, match_l1_frame
+
+        assert len(FRAME_TABLE) == 14
+        samples = {
+            "define": "define people",
+            "dewey": "what is the dewey classification of body",
+            "hypernym": "what is a kind of people",
+            "hyponym": "examples of being",
+            "part": "parts of face",
+            "antonym": "opposite of other",
+            "synonym": "synonym of someone",
+            "cause": "what does become cause",
+            "convert": "convert 100 km to miles",
+            "arithmetic": "calculate 2^10",
+            "datetime": "2026-10-05 + 45 days",
+            "feature": "how do I use the stacks",
+            "fresh": "what is the speed of light from nist.gov",
+            "stack": "tell me about speed of light",
+        }
+        for expected_frame, prompt in samples.items():
+            matched = match_l1_frame(prompt)
+            assert matched is not None, f"Failed to match frame for {prompt}"
+            assert matched.frame == expected_frame
+
+    def test_retrieve_relational_frames_and_compare(self, engine: AliceDecisionEngine):
+        """Test hyponym, part, antonym, synonym, and cause frames over emap.db (Q3.3, Q3.4)."""
+        r_hypo = engine.route_and_arbitrate("examples of being")
+        assert r_hypo.action == ActionType.RETRIEVE
+        assert "organism" in r_hypo.answer
+        assert r_hypo.provenance.metadata["frame"] == "hyponym"
+        assert r_hypo.act == "cite"
+
+        r_part = engine.route_and_arbitrate("parts of face")
+        assert r_part.action == ActionType.RETRIEVE
+        assert "eye" in r_part.answer
+        assert r_part.provenance.metadata["frame"] == "part"
+
+        r_ant = engine.route_and_arbitrate("opposite of other")
+        assert r_ant.action == ActionType.RETRIEVE
+        assert "same" in r_ant.answer
+        assert r_ant.provenance.metadata["frame"] == "antonym"
+
+        r_syn = engine.route_and_arbitrate("synonym of someone")
+        assert r_syn.action == ActionType.RETRIEVE
+        assert "somebody" in r_syn.answer
+        assert r_syn.provenance.metadata["frame"] == "synonym"
+
+        r_cause = engine.route_and_arbitrate("what does become cause")
+        assert r_cause.action == ActionType.RETRIEVE
+        assert "be" in r_cause.answer
+        assert r_cause.provenance.metadata["frame"] == "cause"
+
+    def test_pointer_walk_records_hops(self, engine: AliceDecisionEngine):
+        """Test open pointer edges (form_of, pertainym, derivation) resolve and record hops (Q3.2)."""
+        r_form = engine.route_and_arbitrate("define was")
+        assert r_form.action == ActionType.RETRIEVE
+        assert any("form_of-->be" in h for h in r_form.provenance.metadata["hops"])
+
+        r_pert = engine.route_and_arbitrate("define your")
+        assert r_pert.action == ActionType.RETRIEVE
+        assert any("pertainym-->you" in h for h in r_pert.provenance.metadata["hops"])
+
+        r_deriv = engine.route_and_arbitrate("define softness")
+        assert r_deriv.action == ActionType.RETRIEVE
+        assert any("soft--derivation-->softness" in h for h in r_deriv.provenance.metadata["hops"])
+
+    def test_compose_scalar_card_plus_convert(self, engine: AliceDecisionEngine):
+        """Test Q7.1 COMPOSE rule: scalar card + unit conversion with two receipt steps."""
+        receipt = engine.route_and_arbitrate("speed of light in miles per hour")
+        assert receipt.action == ActionType.COMPOSE
+        assert receipt.act == "cite"
+        assert "670616629" in receipt.answer
+        assert len(receipt.provenance.metadata["steps"]) == 2
+        assert len(receipt.provenance.digest) == 64
+
+    def test_compose_date_card_plus_day_offset(self, engine: AliceDecisionEngine):
+        """Test Q7.2 COMPOSE rule: date card + day offset with calendar tool digest on second step."""
+        receipt = engine.route_and_arbitrate("python release date + 100 days")
+        assert receipt.action == ActionType.COMPOSE
+        assert receipt.act == "cite"
+        assert "1991-05-31" in receipt.answer
+        assert receipt.provenance.source == "tool:datetime_gregorian"
+        assert len(receipt.provenance.metadata["steps"]) == 2
+        assert len(receipt.provenance.digest) == 64
+
+    def test_speech_canon_act_stamps(self, engine: AliceDecisionEngine):
+        """Test Q3.5: every receipt carries a valid act from SPEECH_CANON.md."""
+        from alice_decision_engine import SPEECH_CANON
+
+        r_say = engine.route_and_arbitrate("simplify 3/4 + 1/6")
+        assert r_say.act == "say" and r_say.act in SPEECH_CANON
+
+        r_cite = engine.route_and_arbitrate("define people")
+        assert r_cite.act == "cite" and r_cite.act in SPEECH_CANON
+
+        r_gap = engine.route_and_arbitrate("who was the purple emperor of the moon in year 1234")
+        assert r_gap.act == "silence-gap" and r_gap.act in SPEECH_CANON
+
+
 class TestAliceDecisionModelUnittest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

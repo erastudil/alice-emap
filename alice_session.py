@@ -219,7 +219,24 @@ def _run_turn(
                 memory=memory_hits,
                 shelves=shelves,
                 next_shelf="",
+                provenance={"source": "lexicon", "hops": _meta.get("hops", []), "frame": _meta.get("frame", "")},
             )
+
+    composed = engine.evaluate_compose(text)
+    if composed:
+        answer, digest, meta, _steps = composed
+        shelves.append("compose")
+        return finish(
+            act="cite",
+            route="COMPOSE",
+            answer=answer,
+            source=meta["tool_source"],
+            personality=personality_id,
+            memory=memory_hits,
+            shelves=shelves,
+            next_shelf="",
+            provenance={"source": meta["tool_source"], "digest": digest, **meta},
+        )
 
     shelves.append("stacks")
     stack_hits = search_stacks(text, cards_path=cards_path, limit=1)
