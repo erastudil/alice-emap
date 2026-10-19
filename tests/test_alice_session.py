@@ -89,6 +89,28 @@ def test_unknown_personality():
         run_turn("hello", personality="wizard")
 
 
+def test_session_compose_scalar_and_date():
+    t_speed = run_turn("speed of light in miles per hour", personality="researcher")
+    assert t_speed["act"] == "cite"
+    assert t_speed["route"] == "COMPOSE"
+    assert "670616629" in t_speed["answer"]
+    assert len(t_speed["provenance"]["steps"]) == 2
+
+    t_date = run_turn("python release date + 100 days", personality="researcher")
+    assert t_date["act"] == "cite"
+    assert t_date["route"] == "COMPOSE"
+    assert "1991-05-31" in t_date["answer"]
+    assert len(t_date["provenance"]["digest"]) == 64
+
+
+def test_session_lexicon_pointer_hops():
+    turn = run_turn("define was")
+    assert turn["act"] == "cite"
+    assert turn["route"] == "RETRIEVE"
+    assert turn["source"] == "lexicon"
+    assert any("form_of" in h for h in turn["provenance"]["hops"])
+
+
 class TestAliceSessionUnittest(unittest.TestCase):
     def test_all_session_checks(self):
         with tempfile.TemporaryDirectory() as td:
@@ -99,6 +121,8 @@ class TestAliceSessionUnittest(unittest.TestCase):
         test_feature_how_to()
         test_outside_domain_names_the_gap()
         test_unknown_personality()
+        test_session_compose_scalar_and_date()
+        test_session_lexicon_pointer_hops()
 
 
 if __name__ == "__main__":
