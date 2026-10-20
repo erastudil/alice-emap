@@ -216,6 +216,23 @@ class TestAliceDecisionModel:
                 assert re.match(r"^[0-9a-f]{64}$", receipt.provenance.digest) is not None
                 assert receipt.latency_ms > 0.0
 
+    def test_speech_canon_act_stamping(self, engine: AliceDecisionEngine):
+        """Test SPEECH_CANON.md act stamping across COMPUTE, dimensional error, RETRIEVE, HAND, and ABSTAIN."""
+        r_compute = engine.route_and_arbitrate("simplify 3/4 + 1/6")
+        assert r_compute.act == "say"
+
+        r_dim_err = engine.route_and_arbitrate("convert 10 km to kg")
+        assert r_dim_err.act == "silence-instrument"
+
+        r_retrieve = engine.route_and_arbitrate("define people")
+        assert r_retrieve.act == "cite"
+
+        r_hand = engine.route_and_arbitrate("what is the speed of light from nist.gov")
+        assert r_hand.act == "cite"
+
+        r_abstain = engine.route_and_arbitrate("who was the purple emperor of the moon in year 1234")
+        assert r_abstain.act == "silence-gap"
+
 
 class TestAliceDecisionModelUnittest(unittest.TestCase):
     @classmethod
