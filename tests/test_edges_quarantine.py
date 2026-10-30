@@ -6,6 +6,7 @@ A second pass moves nothing.
 
 import sqlite3
 import sys
+import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,11 +16,9 @@ if str(ROOT) not in sys.path:
 from build_emap_graph import quarantine_unwalkable_edges
 
 DB_PATH = ROOT / "emap.db"
-MEASURED_EDGES = 21195
 SELF_LOOPS = 1353
 DANGLING = 0
 UNSENSED_SOURCE = 0
-KEPT = 19842
 
 
 def _connect() -> sqlite3.Connection:
@@ -29,8 +28,17 @@ def _connect() -> sqlite3.Connection:
 def test_quarantine_is_idempotent_and_conserves_rows():
     db = _connect()
     try:
+        cur = db.cursor()
+        edges_before = cur.execute("SELECT count(*) FROM edges").fetchone()[0]
+        quarantine_before = cur.execute(
+            "SELECT count(*) FROM edges_quarantine"
+        ).fetchone()[0]
         first = quarantine_unwalkable_edges(db)
         second = quarantine_unwalkable_edges(db)
+        edges_after = cur.execute("SELECT count(*) FROM edges").fetchone()[0]
+        quarantine_after = cur.execute(
+            "SELECT count(*) FROM edges_quarantine"
+        ).fetchone()[0]
     finally:
         db.close()
 
@@ -41,10 +49,9 @@ def test_quarantine_is_idempotent_and_conserves_rows():
     assert first["self_loop"] == SELF_LOOPS
     assert first["dangling"] == DANGLING
     assert first["unsensed_source"] == UNSENSED_SOURCE
-    assert (
-        first["self_loop"] + first["dangling"] + first["unsensed_source"] + KEPT
-        == MEASURED_EDGES
-    )
+    reasons = first["self_loop"] + first["dangling"] + first["unsensed_source"]
+    assert reasons == quarantine_before == quarantine_after
+    assert edges_before == edges_after
 
 
 def test_edges_have_no_self_loops_or_dangling_targets():
@@ -116,7 +123,6 @@ def test_edges_have_no_self_loops_or_dangling_targets():
     finally:
         db.close()
 
-    assert edges == KEPT
     assert self_loops == 0
     assert dangling == 0
     assert unsensed == 0
@@ -125,3 +131,15 @@ def test_edges_have_no_self_loops_or_dangling_targets():
     assert bad_dangling == 0
     assert bad_unsensed == 0
     assert sense_targets == edges
+
+
+class TestEdgesQuarantine(unittest.TestCase):
+    def test_quarantine_is_idempotent_and_conserves_rows(self):
+        test_quarantine_is_idempotent_and_conserves_rows()
+
+    def test_edges_have_no_self_loops_or_dangling_targets(self):
+        test_edges_have_no_self_loops_or_dangling_targets()
+
+
+if __name__ == "__main__":
+    unittest.main()

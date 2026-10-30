@@ -70,7 +70,7 @@ class DecisionReceipt:
     provenance: Optional[ProvenanceRecord]
     latency_ms: float
     execution_trace: List[str] = field(default_factory=list)
-    act: str = "silence-gap"
+    act: str = "say"
 
 
 # -----------------------------------------------------------------------------
@@ -704,7 +704,7 @@ class AliceDecisionEngine:
                 provenance=prov,
                 latency_ms=dt,
                 execution_trace=trace,
-                act="say",
+                act="say"
             )
 
         # 1b. SI 7-Dimension Unit Conversion
@@ -729,7 +729,7 @@ class AliceDecisionEngine:
                     provenance=prov,
                     latency_ms=dt,
                     execution_trace=trace,
-                    act="say",
+                    act="silence-instrument"
                 )
             trace.append(f"COMPUTE Success: SI units conversion -> {ans} (digest: {digest[:16]}...)")
             prov = ProvenanceRecord(
@@ -747,7 +747,7 @@ class AliceDecisionEngine:
                 provenance=prov,
                 latency_ms=dt,
                 execution_trace=trace,
-                act="say",
+                act="say"
             )
 
         # 1c. Proleptic Gregorian Datetime
@@ -771,7 +771,7 @@ class AliceDecisionEngine:
                 provenance=prov,
                 latency_ms=dt,
                 execution_trace=trace,
-                act="say",
+                act="say"
             )
 
         # ---------------------------------------------------------
@@ -800,7 +800,7 @@ class AliceDecisionEngine:
                     provenance=prov,
                     latency_ms=dt,
                     execution_trace=trace,
-                    act="cite",
+                    act="cite"
                 )
 
         # ---------------------------------------------------------
@@ -855,7 +855,7 @@ class AliceDecisionEngine:
                     provenance=prov,
                     latency_ms=dt,
                     execution_trace=trace,
-                    act="cite",
+                    act="cite"
                 )
 
         # ---------------------------------------------------------
@@ -873,7 +873,7 @@ class AliceDecisionEngine:
             provenance=None,
             latency_ms=dt,
             execution_trace=trace,
-            act="silence-gap",
+            act="silence-gap"
         )
 
 

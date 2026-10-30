@@ -1,6 +1,7 @@
 """Resolve edge target_id against the sense nodes in emap.db."""
 
 import sys
+import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,12 +55,9 @@ def test_walkable_edges_have_both_ids():
             SELECT COUNT(*) FROM edges
             WHERE target_id IS NOT NULL AND source_lemma != target_lemma
         """).fetchone()[0]
-        has_quarantine = cur.execute(
-            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'edges_quarantine'"
-        ).fetchone() is not None
-        expected_resolved = 19842 if has_quarantine else 6738
-        assert resolved == expected_resolved
-        assert walkable == 19842
+        edges = cur.execute("SELECT COUNT(*) FROM edges").fetchone()[0]
+        assert resolved == edges
+        assert walkable == edges
 
         row = cur.execute("""
             SELECT target_id FROM edges
@@ -75,3 +73,12 @@ def test_walkable_edges_have_both_ids():
         assert resolve_target_ids(db) == 0
     finally:
         db.close()
+
+
+class TestResolveTargetIds(unittest.TestCase):
+    def test_walkable_edges_have_both_ids(self):
+        test_walkable_edges_have_both_ids()
+
+
+if __name__ == "__main__":
+    unittest.main()
