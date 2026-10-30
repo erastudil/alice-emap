@@ -2,6 +2,8 @@
 
 import struct
 import sys
+import tempfile
+import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,20 +27,23 @@ def _insert_node(db, node_id: int, lemma: str) -> None:
 
 def test_missing_target_is_omitted(tmp_path: Path):
     db = get_db(tmp_path / "emap.db")
-    _insert_node(db, 0, "zeta")
-    _insert_node(db, 5, "water")
-    db.executemany(
-        """
-        INSERT INTO edges (source_id, target_id, relation, weight, source_lemma, target_lemma)
-        VALUES (5, NULL, 'hypernym', 0.9, ?, ?)
-        """,
-        [("water", "not-a-lemma"), ("water", "zeta")],
-    )
-    db.commit()
+    try:
+        _insert_node(db, 0, "zeta")
+        _insert_node(db, 5, "water")
+        db.executemany(
+            """
+            INSERT INTO edges (source_id, target_id, relation, weight, source_lemma, target_lemma)
+            VALUES (5, NULL, 'hypernym', 0.9, ?, ?)
+            """,
+            [("water", "not-a-lemma"), ("water", "zeta")],
+        )
+        db.commit()
 
-    out_bin = tmp_path / "emap_csr.bin"
-    out_meta = tmp_path / "emap_csr.json"
-    export_csr(db, out_bin=out_bin, out_meta=out_meta)
+        out_bin = tmp_path / "emap_csr.bin"
+        out_meta = tmp_path / "emap_csr.json"
+        export_csr(db, out_bin=out_bin, out_meta=out_meta)
+    finally:
+        db.close()
 
     magic, version, n_nodes, n_edges = struct.unpack("<4sIII", out_bin.read_bytes()[:16])
     assert magic == b"EMAP"
@@ -91,3 +96,12 @@ def test_shared_lemma_does_not_share_a_slot(tmp_path: Path):
     indices = struct.unpack("<2i", out_bin.read_bytes()[32:40])
     assert indptr == (0, 1, 2, 2)
     assert indices == (1, 0)
+
+class TestExportCsr(unittest.TestCase):
+    def test_missing_target_is_omitted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            test_missing_target_is_omitted(Path(tmp))
+
+
+if __name__ == "__main__":
+    unittest.main()
