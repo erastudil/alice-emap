@@ -28,11 +28,11 @@ One row is one admission. Status is `landed`, `open`, or `blocked`. Owner `local
 | Q2.4 | W2 | Run the auditor on each repair | hydra-free | landed | accept or reject per lemma with a reason code |
 | Q2.5 | W2 | Write back accepted gloss, Dewey, T1, and depth | local | landed | rejected rows unchanged. Edges from this pass wait for Q2.6 |
 | Q2.6 | W2 | Repair edges among lemmas that both have senses | hydra-free | blocked | waits on Q1.3 so new edges cite real ids |
-| Q3.1 | W3 | Frame table module | local | open | one function per frame in `SPEC.md` L1 |
-| Q3.2 | W3 | Pointer walk with hop list | local | open | receipt metadata includes the hops |
-| Q3.3 | W3 | Wire frames in front of RETRIEVE | local | open | old regex tests still pass through the frames |
-| Q3.4 | W3 | Tests for each new frame and for abstain | local | open | pytest exits 0 |
-| Q3.5 | W3 | Stamp every receipt with an act from `SPEECH_CANON.md` | local | open | each receipt is say, cite, silence-gap, silence-instrument, or silence-sample |
+| Q3.1 | W3 | Frame table module | local | landed | one function per frame in `SPEC.md` L1 |
+| Q3.2 | W3 | Pointer walk with hop list | local | landed | receipt metadata includes the hops |
+| Q3.3 | W3 | Wire frames in front of RETRIEVE | local | landed | old regex tests still pass through the frames |
+| Q3.4 | W3 | Tests for each new frame and for abstain | local | landed | pytest exits 0 |
+| Q3.5 | W3 | Stamp every receipt with an act from `SPEECH_CANON.md` | local | landed | each receipt is say, cite, silence-gap, silence-instrument, or silence-sample |
 | Q4.1 | W4 | Card compiler for `stacks/*/FACTS.md` | local | open | 1572 cards, ids stable across reruns |
 | Q4.2 | W4 | Anchor topics onto walkable lemma ids | local | open | every card has at least one anchor or an explicit unanchored flag |
 | Q4.3 | W4 | RETRIEVE returns the card comment and door | local | open | golden prompt file, one hit per card |
@@ -42,8 +42,8 @@ One row is one admission. Status is `landed`, `open`, or `blocked`. Owner `local
 | Q5.3 | W5 | Unlisted host abstains | local | open | test covers a forced foreign domain |
 | Q6.1 | W6 | Feature deck for the surfaces named in `SPEC.md` L3 | local | open | one card per surface |
 | Q6.2 | W6 | How-to frame returns the feature card | local | open | one prompt per surface |
-| Q7.1 | W7 | COMPOSE rule: scalar card plus convert | local | open | speed of light in miles per hour, two receipt steps |
-| Q7.2 | W7 | COMPOSE rule: date card plus day offset | local | open | calendar tool digest on the second step |
+| Q7.1 | W7 | COMPOSE rule: scalar card plus convert | local | landed | speed of light in miles per hour, two receipt steps |
+| Q7.2 | W7 | COMPOSE rule: date card plus day offset | local | landed | calendar tool digest on the second step |
 | Q7.3 | W7 | Teach walk over the textbook span for the shelf | local | open | returned text is a substring of the textbook file |
 | Q8.1 | W8 | Bundle walkable CSR and cards for the browser | easylm | open | answers with zero weight bytes downloaded |
 | Q8.2 | W8 | Default EasyLM answerer calls Alice first | easylm | open | generation starts only after abstain plus an explicit request |

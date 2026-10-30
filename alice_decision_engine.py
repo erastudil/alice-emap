@@ -13,6 +13,7 @@ Invariants:
 
 from __future__ import annotations
 
+import contextlib
 import fractions
 import hashlib
 import json
@@ -27,6 +28,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from alice_frames import match_l1_frame, match_lexicon_frame, resolve_pointer_hops
+
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "emap.db"
 CSR_BIN_PATH = ROOT / "emap_csr.bin"
@@ -35,8 +38,18 @@ CSR_BIN_PATH = ROOT / "emap_csr.bin"
 class ActionType(str, Enum):
     COMPUTE = "COMPUTE"
     RETRIEVE = "RETRIEVE"
+    COMPOSE = "COMPOSE"
     HAND = "HAND"
     ABSTAIN = "ABSTAIN"
+
+
+SPEECH_CANON: Set[str] = {
+    "say",
+    "cite",
+    "silence-gap",
+    "silence-instrument",
+    "silence-sample",
+}
 
 
 @dataclass
@@ -256,10 +269,27 @@ class DeterministicEngine:
 
         return None
 
+    UNIT_PHRASE_ALIASES: Dict[str, str] = {
+        "miles per hour": "mph",
+        "mile per hour": "mph",
+        "meters per second": "m/s",
+        "meter per second": "m/s",
+        "kilometers per hour": "km/h",
+        "kilometer per hour": "km/h",
+    }
+
+    @classmethod
+    def _normalize_unit_phrases(cls, text: str) -> str:
+        out = text
+        for phrase, canonical in cls.UNIT_PHRASE_ALIASES.items():
+            out = re.sub(rf"\b{re.escape(phrase)}\b", canonical, out, flags=re.IGNORECASE)
+        return out
+
     @classmethod
     def evaluate_si_dimensions(cls, query: str) -> Optional[Tuple[str, str]]:
         """Convert physical quantities with SI 7-base dimensional consistency check."""
-        m = re.search(r"(\d+(?:\.\d+)?)\s*([a-zA-Z\/]+)\s+(?:in|to|into)\s+([a-zA-Z\/]+)", query, re.IGNORECASE)
+        norm_query = cls._normalize_unit_phrases(query)
+        m = re.search(r"(\d+(?:\.\d+)?)\s*([a-zA-Z\/]+)\s+(?:in|to|into)\s+([a-zA-Z\/]+)", norm_query, re.IGNORECASE)
         if not m:
             return None
         val_str, u1_raw, u2_raw = m.groups()
@@ -295,7 +325,8 @@ class DeterministicEngine:
 
             base_val = val * scale1
             target_val = base_val / scale2
-            out = f"{target_val:.6g} {u2_raw} (Dimension: {dim1})"
+            val_fmt = f"{target_val:.4f}".rstrip("0").rstrip(".") if abs(target_val) >= 1e6 else f"{target_val:.6g}"
+            out = f"{val_fmt} {u2_raw} (Dimension: {dim1})"
             digest = hashlib.sha256(f"SI_UNITS:{val}{u1}->{u2}={out}".encode()).hexdigest()
             return out, digest
 
@@ -380,79 +411,99 @@ class DeweyGraphNavigator:
         self.db_path = db_path
 
     def query_graph(self, query: str) -> Optional[Tuple[str, float, Dict[str, Any]]]:
-        """Traverse lemma graph for definition, relation, or Dewey classification."""
+        """Traverse lemma graph via L1 frames and open pointer hops."""
         if not self.db_path.exists():
             return None
 
-        conn = sqlite3.connect(str(self.db_path), timeout=30.0)
-        conn.row_factory = sqlite3.Row
-        cur = conn.cursor()
+        matched = match_lexicon_frame(query)
+        if matched is None:
+            return None
 
-        q_lower = query.lower().strip()
+        with contextlib.closing(sqlite3.connect(str(self.db_path), timeout=30.0)) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
 
-        # 1. Relation pattern
-        rel_pattern = r"^(?:what\s+is\s+the\s+)?(hypernym|antonym|synonym|part|opposite|kind)\s+of\s+([a-zA-Z]+)[?.!]*$"
-        m_rel = re.search(rel_pattern, q_lower)
-        if m_rel:
-            raw_rel, lem = m_rel.groups()
-            rel_name = "hypernym" if raw_rel in ("hypernym", "kind") else ("antonym" if raw_rel in ("antonym", "opposite") else raw_rel)
-            cur.execute("""
-            SELECT target_lemma, weight, relation FROM edges
-            WHERE source_lemma = ? AND relation = ?
-            ORDER BY weight DESC LIMIT 3
-            """, (lem, rel_name))
+            resolved_lem, hops = resolve_pointer_hops(conn, matched.slot)
+            lem = resolved_lem or matched.slot
+
+            if matched.frame == "define":
+                if not resolved_lem:
+                    return None
+                cur.execute(
+                    "SELECT lemma, pos, gloss, dewey, t1_decomposition, depth FROM nodes WHERE lemma = ?",
+                    (lem,),
+                )
+                row = cur.fetchone()
+                if row:
+                    ans = f"'{lem}' ({row['pos']}): {row['gloss']} [Dewey: {row['dewey']}, Logic: {row['t1_decomposition']}]."
+                    meta = {
+                        "frame": "define",
+                        "lemma": lem,
+                        "pos": row["pos"],
+                        "dewey": row["dewey"],
+                        "t1_decomposition": row["t1_decomposition"],
+                        "depth": row["depth"],
+                        "hops": hops,
+                        "db_source": "emap.db:nodes",
+                    }
+                    return ans, 0.92, meta
+                return None
+
+            if matched.frame == "dewey":
+                if not resolved_lem:
+                    return None
+                cur.execute("SELECT lemma, pos, dewey, depth, gloss FROM nodes WHERE lemma = ?", (lem,))
+                row = cur.fetchone()
+                if row:
+                    dewey_code = row["dewey"]
+                    ans = f"Lemma '{lem}' is classified under Dewey section {dewey_code} ({row['gloss']})."
+                    meta = {
+                        "frame": "dewey",
+                        "lemma": lem,
+                        "dewey": dewey_code,
+                        "depth": row["depth"],
+                        "hops": hops,
+                        "db_source": "emap.db:nodes",
+                    }
+                    return ans, 0.95, meta
+                return None
+
+            # Relational L1 frames: hypernym, hyponym, part, antonym, synonym, cause
+            if matched.frame == "part":
+                relations = ("has_part", "part_of")
+                rel_label = "part"
+            elif matched.frame == "cause":
+                relations = ("causes", "entails")
+                rel_label = "cause"
+            else:
+                rel_label = matched.relation or matched.frame
+                relations = (rel_label,)
+
+            placeholders = ",".join("?" for _ in relations)
+            cur.execute(
+                f"""
+                SELECT target_lemma, weight, relation FROM edges
+                WHERE source_lemma = ? AND relation IN ({placeholders})
+                  AND target_id IS NOT NULL
+                ORDER BY weight DESC LIMIT 3
+                """,
+                (lem, *relations),
+            )
             rows = cur.fetchall()
             if rows:
                 targets = [r["target_lemma"] for r in rows]
                 confidence = float(rows[0]["weight"])
-                ans = f"The {rel_name} of '{lem}' is: {', '.join(targets)}."
+                ans = f"The {rel_label} of '{lem}' is: {', '.join(targets)}."
                 meta = {
+                    "frame": matched.frame,
                     "source_lemma": lem,
-                    "relation": rel_name,
+                    "relation": rows[0]["relation"],
                     "targets": targets,
-                    "db_source": "emap.db:edges"
+                    "hops": hops,
+                    "db_source": "emap.db:edges",
                 }
-                conn.close()
                 return ans, confidence, meta
 
-        # 2. Dewey Classification
-        m_dewey = re.search(r"^(?:what\s+is\s+the\s+)?dewey\s+(?:code|category|classification|shelf)?\s*(?:for|of)?\s+([a-zA-Z]+)[?.!]*$", q_lower)
-        if m_dewey:
-            lem = m_dewey.group(1)
-            cur.execute("SELECT lemma, pos, dewey, depth, gloss FROM nodes WHERE lemma = ?", (lem,))
-            row = cur.fetchone()
-            if row:
-                dewey_code = row["dewey"]
-                ans = f"Lemma '{lem}' is classified under Dewey section {dewey_code} ({row['gloss']})."
-                meta = {
-                    "lemma": lem,
-                    "dewey": dewey_code,
-                    "depth": row["depth"],
-                    "db_source": "emap.db:nodes"
-                }
-                conn.close()
-                return ans, 0.95, meta
-
-        # 3. Direct Definition
-        m_def = re.search(r"^(?:define|meaning\s+of|definition\s+of)\s+([a-zA-Z]+)[?.!]*$", q_lower)
-        if m_def:
-            lem = m_def.group(1)
-            cur.execute("SELECT lemma, pos, gloss, dewey, t1_decomposition, depth FROM nodes WHERE lemma = ?", (lem,))
-            row = cur.fetchone()
-            if row:
-                ans = f"'{lem}' ({row['pos']}): {row['gloss']} [Dewey: {row['dewey']}, Logic: {row['t1_decomposition']}]."
-                meta = {
-                    "lemma": lem,
-                    "pos": row["pos"],
-                    "dewey": row["dewey"],
-                    "t1_decomposition": row["t1_decomposition"],
-                    "depth": row["depth"],
-                    "db_source": "emap.db:nodes"
-                }
-                conn.close()
-                return ans, 0.92, meta
-
-        conn.close()
         return None
 
 
@@ -478,6 +529,8 @@ class WhitelistedHandProxy:
             "url": "https://physics.nist.gov/constants/c",
             "answer": "The speed of light in vacuum is exactly 299,792,458 meters per second.",
             "trust_score": 0.99,
+            "scalar_value": 299792458.0,
+            "scalar_unit": "m/s",
         },
         "gravitational constant": {
             "domain": "nist.gov",
@@ -490,6 +543,7 @@ class WhitelistedHandProxy:
             "url": "https://en.wikipedia.org/wiki/Python_(programming_language)",
             "answer": "Python was first released on February 20, 1991 by Guido van Rossum.",
             "trust_score": 0.95,
+            "iso_date": "1991-02-20",
         },
     }
 
@@ -513,7 +567,7 @@ class WhitelistedHandProxy:
                     "domain": domain,
                     "url": url,
                     "trust_score": trust,
-                    "verification": "whitelisted_source"
+                    "verification": "whitelisted_source",
                 }
                 return ans, trust, meta
 
@@ -533,10 +587,92 @@ class AliceDecisionEngine:
         self.theta_hand = theta_hand
         self.navigator = DeweyGraphNavigator(db_path)
 
+    @classmethod
+    def evaluate_compose(cls, query: str) -> Optional[Tuple[str, str, Dict[str, Any], List[str]]]:
+        """Evaluate L4 COMPOSE chain rules (SPEC.md section 5 L4, QUEUE.md Q7.1 & Q7.2):
+        - Q7.1: scalar card/constant + convert frame -> fetch scalar, then run SI unit tool.
+        - Q7.2: date card/fact + day-offset frame -> fetch ISO date, then run calendar tool.
+        """
+        q_clean = query.strip()
+
+        # Rule 1 (Q7.1): Scalar card + unit conversion (e.g., "speed of light in miles per hour")
+        m_scalar = re.match(
+            r"^(?:convert\s+|what\s+is\s+(?:the\s+)?)?(.+?)\s+(?:in|to|into)\s+(miles\s+per\s+hour|mph|km\/h|kmh|m\/s|knots?|kilometers?|meters?|miles?|feet|ft)[?.!]*$",
+            q_clean,
+            flags=re.IGNORECASE,
+        )
+        if m_scalar and not re.search(r"^\d", m_scalar.group(1).strip()):
+            topic_q = m_scalar.group(1).strip().lower()
+            target_unit = m_scalar.group(2).strip()
+            for topic_key, entry in WhitelistedHandProxy.WHITELISTED_STORE.items():
+                if topic_key in topic_q and "scalar_value" in entry and "scalar_unit" in entry:
+                    scalar_val = entry["scalar_value"]
+                    scalar_unit = entry["scalar_unit"]
+                    step1_digest = hashlib.sha256(
+                        f"CARD:{entry['url']}:{scalar_val} {scalar_unit}".encode()
+                    ).hexdigest()
+                    conv_res = DeterministicEngine.evaluate_si_dimensions(
+                        f"{scalar_val} {scalar_unit} to {target_unit}"
+                    )
+                    if conv_res:
+                        conv_ans, step2_digest = conv_res
+                        steps = [
+                            f"Step 1 (RETRIEVE): {topic_key} = {scalar_val:g} {scalar_unit} [{entry['url']}] (digest: {step1_digest[:16]}...)",
+                            f"Step 2 (COMPUTE): convert {scalar_val:g} {scalar_unit} to {target_unit} -> {conv_ans} (digest: {step2_digest[:16]}...)",
+                        ]
+                        meta = {
+                            "rule": "scalar_card_plus_convert",
+                            "card_source": entry["url"],
+                            "card_digest": step1_digest,
+                            "tool_source": "tool:si_units_algebra",
+                            "tool_digest": step2_digest,
+                            "steps": steps,
+                        }
+                        ans = f"{entry['answer']} Converted: {conv_ans}"
+                        return ans, step2_digest, meta, steps
+
+        # Rule 2 (Q7.2): Date card + day offset (e.g., "python release date + 100 days")
+        m_date = re.match(
+            r"^(.+?)\s*([\+\-])\s*(\d+)\s*days?[?.!]*$",
+            q_clean,
+            flags=re.IGNORECASE,
+        )
+        if m_date and not re.search(r"\d{4}-\d{2}-\d{2}", m_date.group(1)):
+            topic_q = m_date.group(1).strip().lower()
+            op = m_date.group(2)
+            days = m_date.group(3)
+            for topic_key, entry in WhitelistedHandProxy.WHITELISTED_STORE.items():
+                if topic_key in topic_q and "iso_date" in entry:
+                    iso_date = entry["iso_date"]
+                    step1_digest = hashlib.sha256(
+                        f"CARD:{entry['url']}:{iso_date}".encode()
+                    ).hexdigest()
+                    dt_res = DeterministicEngine.evaluate_proleptic_gregorian(
+                        f"{iso_date} {op} {days} days"
+                    )
+                    if dt_res:
+                        dt_ans, step2_digest = dt_res
+                        steps = [
+                            f"Step 1 (RETRIEVE): {topic_key} = {iso_date} [{entry['url']}] (digest: {step1_digest[:16]}...)",
+                            f"Step 2 (COMPUTE): {iso_date} {op} {days} days -> {dt_ans} (digest: {step2_digest[:16]}...)",
+                        ]
+                        meta = {
+                            "rule": "date_card_plus_offset",
+                            "card_source": entry["url"],
+                            "card_digest": step1_digest,
+                            "tool_source": "tool:datetime_gregorian",
+                            "tool_digest": step2_digest,
+                            "steps": steps,
+                        }
+                        ans = f"{entry['answer']} ({iso_date} {op} {days} days -> {dt_ans})"
+                        return ans, step2_digest, meta, steps
+
+        return None
+
     def route_and_arbitrate(self, query: str, forced_domain: Optional[str] = None) -> DecisionReceipt:
         """Execute the formal arbitration lattice over query q:
 
-        COMPUTE > RETRIEVE > HAND > ABSTAIN
+        COMPUTE > RETRIEVE > COMPOSE > HAND > ABSTAIN
         """
         t0 = time.time()
         req_id = f"req-{uuid.uuid4().hex[:12]}"
@@ -558,7 +694,7 @@ class AliceDecisionEngine:
                 source="tool:cas_rational_kernel",
                 digest=digest,
                 timestamp=datetime.now(timezone.utc).isoformat(),
-                metadata={"engine": "fractions_zero_drift"}
+                metadata={"engine": "fractions_zero_drift", "frame": "arithmetic"},
             )
             return DecisionReceipt(
                 request_id=req_id,
@@ -583,7 +719,7 @@ class AliceDecisionEngine:
                     source="tool:si_dimension_checker",
                     digest=digest,
                     timestamp=datetime.now(timezone.utc).isoformat(),
-                    metadata={"error": "dimensional_mismatch"}
+                    metadata={"error": "dimensional_mismatch", "frame": "convert"},
                 )
                 return DecisionReceipt(
                     request_id=req_id,
@@ -601,7 +737,7 @@ class AliceDecisionEngine:
                 source="tool:si_units_algebra",
                 digest=digest,
                 timestamp=datetime.now(timezone.utc).isoformat(),
-                metadata={"engine": "si_7dim_vector"}
+                metadata={"engine": "si_7dim_vector", "frame": "convert"},
             )
             return DecisionReceipt(
                 request_id=req_id,
@@ -625,7 +761,7 @@ class AliceDecisionEngine:
                 source="tool:datetime_gregorian",
                 digest=digest,
                 timestamp=datetime.now(timezone.utc).isoformat(),
-                metadata={"engine": "proleptic_gregorian_tz"}
+                metadata={"engine": "proleptic_gregorian_tz", "frame": "datetime"},
             )
             return DecisionReceipt(
                 request_id=req_id,
@@ -654,7 +790,7 @@ class AliceDecisionEngine:
                     source=f"dewey_stack:{meta.get('dewey', '420')}",
                     digest=digest,
                     timestamp=datetime.now(timezone.utc).isoformat(),
-                    metadata=meta
+                    metadata=meta,
                 )
                 return DecisionReceipt(
                     request_id=req_id,
@@ -666,6 +802,32 @@ class AliceDecisionEngine:
                     execution_trace=trace,
                     act="cite"
                 )
+
+        # ---------------------------------------------------------
+        # TIER 2.5: COMPOSE (Card Retrieval + Tool Execution Chain)
+        # ---------------------------------------------------------
+        compose_res = self.evaluate_compose(query)
+        if compose_res:
+            ans, digest, meta, steps = compose_res
+            dt = (time.time() - t0) * 1000.0
+            trace.extend(steps)
+            prov = ProvenanceRecord(
+                route=ActionType.COMPOSE,
+                source=meta["tool_source"],
+                digest=digest,
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                metadata=meta,
+            )
+            return DecisionReceipt(
+                request_id=req_id,
+                action=ActionType.COMPOSE,
+                answer=ans,
+                confidence=1.0,
+                provenance=prov,
+                latency_ms=dt,
+                execution_trace=trace,
+                act="cite",
+            )
 
         # ---------------------------------------------------------
         # TIER 3: HAND (Whitelisted Web Search Proxy)
@@ -683,7 +845,7 @@ class AliceDecisionEngine:
                     source=meta["url"],
                     digest=digest,
                     timestamp=datetime.now(timezone.utc).isoformat(),
-                    metadata=meta
+                    metadata=meta,
                 )
                 return DecisionReceipt(
                     request_id=req_id,
@@ -700,11 +862,13 @@ class AliceDecisionEngine:
         # TIER 4: ABSTAIN (Calibrated Refusal)
         # ---------------------------------------------------------
         dt = (time.time() - t0) * 1000.0
-        trace.append("Lattice Step 4: No route satisfied confidence bounds. Escalating to ABSTAIN.")
+        matched_frame = match_l1_frame(query)
+        frame_name = matched_frame.frame if matched_frame else "unmatched"
+        trace.append(f"Lattice Step 4: Frame '{frame_name}' failed confidence bounds. Escalating to ABSTAIN.")
         return DecisionReceipt(
             request_id=req_id,
             action=ActionType.ABSTAIN,
-            answer="ABSTAIN: No verified factual support path exists in emap or authorized tools.",
+            answer=f"ABSTAIN [{frame_name}]: No verified factual support path exists in emap or authorized tools.",
             confidence=0.0,
             provenance=None,
             latency_ms=dt,
