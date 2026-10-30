@@ -40,7 +40,9 @@ logic stubs: `NAME(x)` 1437, `PERSON(x)` 1087, `LOCATION(x)` 560, `NOUN(x)` 289,
 
 batches: 880 completed. CheaperInference GLM 5.3 spend $5.06 across 492 calls, past the $5.00 ceiling in `build_emap_graph.py`.
 
-csr: `emap_csr.bin` payload 134661 bytes, 24240 nodes, 5383 edges, exported from `edges` after quarantine and `target_id` resolution. The binary edge count equals the walkable row count.
+csr: on 2026-10-15, `emap_csr.bin` payload was 134661 bytes, 24240 nodes, 5383 edges, exported from `edges` after quarantine and `target_id` resolution.
+
+current lattice: measured 2026-10-18 from `emap.db` and `emap_csr.json`. Lemmas 46028. Sense nodes 46030. Walkable edges 46322. Quarantine holds 1353 self-loops. Kernel flag 125. `emap_csr.bin` payload 508394 bytes. The binary node count equals the sense-node table, and the binary edge count equals the walkable row count.
 
 running router: `alice_decision_engine.py`. COMPUTE covers rational arithmetic, a closed SI unit table, and proleptic Gregorian dates. RETRIEVE covers three regular expressions over a single alphabetic token. HAND covers three stored strings. ABSTAIN is the miss.
 
