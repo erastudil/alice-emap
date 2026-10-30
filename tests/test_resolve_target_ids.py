@@ -1,6 +1,7 @@
 """Resolve edge target_id against the sense nodes in emap.db."""
 
 import sys
+import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -72,3 +73,12 @@ def test_walkable_edges_have_both_ids():
         assert resolve_target_ids(db) == 0
     finally:
         db.close()
+
+
+class TestResolveTargetIds(unittest.TestCase):
+    def test_walkable_edges_have_both_ids(self):
+        test_walkable_edges_have_both_ids()
+
+
+if __name__ == "__main__":
+    unittest.main()

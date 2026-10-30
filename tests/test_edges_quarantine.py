@@ -6,6 +6,7 @@ A second pass moves nothing.
 
 import sqlite3
 import sys
+import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -130,3 +131,15 @@ def test_edges_have_no_self_loops_or_dangling_targets():
     assert bad_dangling == 0
     assert bad_unsensed == 0
     assert sense_targets == edges
+
+
+class TestEdgesQuarantine(unittest.TestCase):
+    def test_quarantine_is_idempotent_and_conserves_rows(self):
+        test_quarantine_is_idempotent_and_conserves_rows()
+
+    def test_edges_have_no_self_loops_or_dangling_targets(self):
+        test_edges_have_no_self_loops_or_dangling_targets()
+
+
+if __name__ == "__main__":
+    unittest.main()

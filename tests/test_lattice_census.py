@@ -65,7 +65,16 @@ def test_contract_cites_measured_lattice():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     spec = (ROOT / "SPEC.md").read_text(encoding="utf-8")
-    card = (ROOT / "tools" / "upload_alice_adapter.py").read_text(encoding="utf-8")
+    # The card on main is a template filled from measured topology at upload
+    # time; render it the same way instead of reading the raw template.
+    import importlib.util
+
+    _spec = importlib.util.spec_from_file_location(
+        "upload_alice_adapter", ROOT / "tools" / "upload_alice_adapter.py"
+    )
+    _upload = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_upload)
+    card = _upload.model_card(_upload.measured_topology(ROOT))
 
     assert f"{lemmas} lemmas and {nodes} sense nodes" in readme
     assert f"{edges} walkable edges" in readme
